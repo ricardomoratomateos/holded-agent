@@ -1,4 +1,3 @@
-import { Loader2 } from 'lucide-react';
 import type { Message as MessageType } from '../../types';
 import { Message } from './Message';
 
@@ -9,7 +8,7 @@ interface MessageListProps {
   onApprove?: () => void;
 }
 
-export const MessageList = ({ messages, loading, messagesEndRef, onApprove }: MessageListProps) => {
+export const MessageList = ({ messages, messagesEndRef, onApprove }: MessageListProps) => {
   return (
     <div className="flex-1 overflow-y-auto px-4 py-8">
       <div className="max-w-3xl mx-auto space-y-6">
