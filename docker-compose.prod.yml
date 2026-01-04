@@ -12,7 +12,10 @@ services:
       - ./checkpoints.sqlite:/app/checkpoints.sqlite
 
   frontend:
-    build: ./frontend
+    build: 
+      context: ./frontend
+      args:
+        - VITE_API_URL=https://api-holded-agent.dewdewdewdewdew.com
     container_name: holded-agent-frontend
     restart: always
     ports:
