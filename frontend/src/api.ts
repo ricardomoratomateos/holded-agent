@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:3300";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3300";
 
 export const chatWithAgent = async (message: string, threadId: string, holdedKey: string) => {
   const response = await fetch(`${API_URL}/chat`, {

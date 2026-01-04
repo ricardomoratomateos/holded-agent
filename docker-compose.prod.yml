@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  backend:
+    build: .
+    container_name: holded-agent-backend
+    restart: always
+    ports:
+      - "3300:3300"
+    env_file: .env
+    volumes:
+      - ./checkpoints.sqlite:/app/checkpoints.sqlite
+
+  frontend:
+    build: ./frontend
+    container_name: holded-agent-frontend
+    restart: always
+    ports:
+      - "8080:80"
+    environment:
+      - VITE_API_URL=https://api.holded-agent.dewdewdewdewdew.com

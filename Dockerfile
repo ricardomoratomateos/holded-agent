@@ -1,0 +1,9 @@
+FROM node:20-slim
+WORKDIR /app
+COPY package*.json ./
+RUN npm install --production
+COPY . .
+# Si usas TypeScript, asegúrate de tener el script 'build' y 'start' en package.json
+RUN npm run build 
+EXPOSE 3300
+CMD ["npm", "start"]
