@@ -18,4 +18,4 @@ services:
     ports:
       - "8080:80"
     environment:
-      - VITE_API_URL=https://api.holded-agent.dewdewdewdewdew.com
+      - VITE_API_URL=https://api-holded-agent.dewdewdewdewdew.com
