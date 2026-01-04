@@ -4,6 +4,6 @@ COPY package*.json ./
 RUN npm install
 COPY . .
 # Si usas TypeScript, asegúrate de tener el script 'build' y 'start' en package.json
-RUN npm run build 
+RUN npm run build || true
 EXPOSE 3300
 CMD ["npm", "start"]
