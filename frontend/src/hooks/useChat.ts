@@ -65,26 +65,13 @@ export const useChat = (apiKey: string) => {
           const lastMsg = prev[lastIndex];
           const updatedMsg = { ...lastMsg };
 
-          // --- FILTRADO DE CONTENIDO TÉCNICO ---
+          // Acumulación de contenido (el backend ya filtra el contenido técnico)
           if (chunk.content) {
-            // Caso A: El backend envía un Array de bloques (común en LangChain/Claude)
-            if (Array.isArray(chunk.content)) {
-              const textOnly = chunk.content
-                .filter((c: any) => c.type === 'text') // Solo bloques de texto humano
-                .map((c: any) => c.text)
-                .join("");
-              
-              if (textOnly) {
-                updatedMsg.content = textOnly;
-              }
-            } 
-            // Caso B: El backend envía texto plano (streaming letra a letra)
-            else if (typeof chunk.content === 'string') {
-              // Evitamos acumular JSONs o pensamientos técnicos (suelen empezar con { o [)
-              const cleanChunk = chunk.content.trim();
-              if (!cleanChunk.startsWith('{') && !cleanChunk.startsWith('[')) {
-                updatedMsg.content = updatedMsg.content + chunk.content;
-              }
+            if (typeof chunk.content === 'string') {
+              updatedMsg.content = updatedMsg.content + chunk.content;
+            } else {
+              // Si recibimos algo que no es string, lo dejamos para que MessageContent lo maneje
+              updatedMsg.content = chunk.content;
             }
           }
 
