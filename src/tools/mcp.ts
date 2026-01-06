@@ -20,7 +20,7 @@ export async function getResearcherTools() {
     name: "holded-researcher",
     version: "1.0.0"
   }, {
-    capabilities: { tools: {} }
+    capabilities: {}
   });
 
   await client.connect(transport);

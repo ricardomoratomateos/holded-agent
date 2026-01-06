@@ -6,6 +6,7 @@ import { DynamicTool } from "@langchain/core/tools";
 
 import { createHoldedTool } from "../tools/holded.js";
 import { getResearcherTools } from "../tools/mcp.js";
+import { getBrowserTools } from "../tools/playwright-mcp.js";
 import { AgentState } from "./state.js";
 import { HOLDED_AGENT_SYSTEM_PROMPT } from "./prompts.js";
 import { checkpointer } from "../database/persistence.js";
@@ -13,7 +14,8 @@ import { checkpointer } from "../database/persistence.js";
 export async function createAgent(holdedApiKey: string) {
     const holdedTool = createHoldedTool(holdedApiKey);
     const mcpRawTools = await getResearcherTools();
-    
+    const browserRawTools = await getBrowserTools();
+
     const formattedMcpTools = mcpRawTools.map(t => new DynamicTool({
         name: t.name,
         description: t.description ?? `Búsqueda`,
@@ -24,10 +26,19 @@ export async function createAgent(holdedApiKey: string) {
         }
     }));
 
+    const formattedBrowserTools = browserRawTools.map(t => new DynamicTool({
+        name: t.name,
+        description: t.description ?? `Automatización de navegador`,
+        func: async (args) => {
+            const result = await (t as any).execute(args);
+            return JSON.stringify(result);
+        }
+    }));
+
     // --- LA CLAVE ESTÁ AQUÍ ---
-    // Ambos nodos necesitan tener acceso a la herramienta de Holded, 
-    // pero el flujo decidirá por cuál pasar.
-    const allTools = [holdedTool, ...formattedMcpTools];
+    // Ambos nodos necesitan tener acceso a las herramientas,
+    // pero el flujo decidirá por cuál pasar según el tipo de operación.
+    const allTools = [holdedTool, ...formattedMcpTools, ...formattedBrowserTools];
 
     const model = new ChatAnthropic({
         modelName: "claude-sonnet-4-5",

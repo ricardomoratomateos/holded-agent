@@ -35,18 +35,19 @@ server.post("/chat", async (request, reply) => {
     for await (const [msg, metadata] of stream) {
       // Extraemos el texto de forma segura, ya sea string o bloques de Claude
       let textContent = "";
-      
-      if (typeof msg.content === 'string') {
-        textContent = msg.content;
-      } else if (Array.isArray(msg.content)) {
-        textContent = msg.content
+      const content = (msg as any).content;
+
+      if (typeof content === 'string') {
+        textContent = content;
+      } else if (Array.isArray(content)) {
+        textContent = content
           .filter((c: any) => c.type === 'text')
           .map((c: any) => c.text)
           .join("");
       }
 
       // Solo enviamos si hay texto y proviene del nodo del agente
-      if (textContent && metadata.langgraph_node === "agent") {
+      if (textContent && (metadata as any).langgraph_node === "agent") {
         const payload = JSON.stringify({
           content: textContent,
           status: "streaming"
