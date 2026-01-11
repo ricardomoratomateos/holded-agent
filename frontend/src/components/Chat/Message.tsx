@@ -6,9 +6,10 @@ import { ApprovalPanel } from './ApprovalPanel';
 interface MessageProps {
   message: MessageType;
   onApprove?: () => void;
+  onReject?: () => void;
 }
 
-export const Message = ({ message, onApprove }: MessageProps) => {
+export const Message = ({ message, onApprove, onReject }: MessageProps) => {
   const isUser = message.role === 'user';
 
   // Determinamos si debemos mostrar el estado de carga dentro de la burbuja
@@ -49,8 +50,8 @@ export const Message = ({ message, onApprove }: MessageProps) => {
             <MessageContent content={message.content} isUser={isUser} />
           )}
 
-          {message.status === 'pending_approval' && (
-            <ApprovalPanel onApprove={onApprove} />
+          {message.status === 'pending_approval' && onApprove && onReject && (
+            <ApprovalPanel onApprove={onApprove} onReject={onReject} />
           )}
         </div>
       </div>

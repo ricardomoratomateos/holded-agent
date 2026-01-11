@@ -6,9 +6,10 @@ interface MessageListProps {
   loading: boolean;
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
   onApprove?: () => void;
+  onReject?: () => void;
 }
 
-export const MessageList = ({ messages, messagesEndRef, onApprove }: MessageListProps) => {
+export const MessageList = ({ messages, messagesEndRef, onApprove, onReject }: MessageListProps) => {
   return (
     <div className="flex-1 overflow-y-auto px-4 py-8">
       <div className="max-w-3xl mx-auto space-y-6">
@@ -23,6 +24,7 @@ export const MessageList = ({ messages, messagesEndRef, onApprove }: MessageList
             key={i}
             message={msg}
             onApprove={onApprove}
+            onReject={onReject}
           />
         ))}
 

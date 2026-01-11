@@ -10,15 +10,21 @@ export const chatWithAgent = async (message: string, threadId: string, holdedKey
 };
 
 export const chatWithAgentStreaming = async (
-  message: string, 
-  threadId: string, 
+  message: string,
+  threadId: string,
   holdedKey: string,
-  onChunk: (chunk: any) => void
+  onChunk: (chunk: any) => void,
+  action?: 'approve' | 'reject'
 ) => {
+  const body: any = { message, threadId, holdedKey };
+  if (action) {
+    body.action = action;
+  }
+
   const response = await fetch(`${API_URL}/chat`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ message, threadId, holdedKey }),
+    body: JSON.stringify(body),
   });
 
   const reader = response.body?.getReader();
@@ -38,15 +44,6 @@ export const chatWithAgentStreaming = async (
       }
     }
   }
-};
-
-export const approveAction = async (threadId: string, holdedKey: string) => {
-  const response = await fetch(`${API_URL}/approve`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ threadId, holdedKey }),
-  });
-  return response.json();
 };
 
 export const getChatHistory = async (threadId: string, holdedKey: string) => {

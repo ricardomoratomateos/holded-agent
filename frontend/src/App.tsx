@@ -8,7 +8,7 @@ import { useChat } from './hooks/useChat';
 function App() {
   const { apiKey, isConfigured, isLoading, saveApiKey, clearApiKey } = useApiKey();
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const { messages, loading, sendMessage, handleApproval, clearChat, messagesEndRef } = useChat(apiKey);
+  const { messages, loading, sendMessage, handleApprove, handleReject, clearChat, messagesEndRef } = useChat(apiKey);
   const hasInitialized = useRef(false);
 
   // Mostrar settings solo la primera vez si no hay API key (después de cargar)
@@ -34,7 +34,8 @@ function App() {
         loading={loading}
         messagesEndRef={messagesEndRef}
         onSend={sendMessage}
-        onApprove={handleApproval}
+        onApprove={handleApprove}
+        onReject={handleReject}
       />
 
       <SettingsModal

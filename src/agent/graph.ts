@@ -41,7 +41,7 @@ export async function createAgent(holdedApiKey: string) {
     const allTools = [holdedTool, ...formattedMcpTools, ...formattedBrowserTools];
 
     const model = new ChatAnthropic({
-        modelName: "claude-sonnet-4-5",
+        modelName: "claude-haiku-4-5",
         temperature: 0,
     }).bindTools(allTools);
 

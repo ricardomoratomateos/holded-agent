@@ -8,6 +8,7 @@ interface ChatContainerProps {
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
   onSend: (message: string) => void;
   onApprove?: () => void;
+  onReject?: () => void;
 }
 
 export const ChatContainer = ({
@@ -15,7 +16,8 @@ export const ChatContainer = ({
   loading,
   messagesEndRef,
   onSend,
-  onApprove
+  onApprove,
+  onReject
 }: ChatContainerProps) => {
   return (
     <div className="flex flex-col h-full">
@@ -24,6 +26,7 @@ export const ChatContainer = ({
         loading={loading}
         messagesEndRef={messagesEndRef}
         onApprove={onApprove}
+        onReject={onReject}
       />
 
       <div className="border-t border-gray-200 bg-white p-4 pb-6">

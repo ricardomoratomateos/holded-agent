@@ -17,7 +17,7 @@ await server.register(cors, {
  * ENDPOINT PRINCIPAL: Streaming de mensajes con soporte para interrupciones
  */
 server.post("/chat", async (request, reply) => {
-  const { message, threadId, holdedKey } = request.body as any;
+  const { message, threadId, holdedKey, action } = request.body as any;
   const agent = await createAgent(holdedKey);
   const config = { configurable: { thread_id: threadId } };
 
@@ -28,9 +28,44 @@ server.post("/chat", async (request, reply) => {
   reply.raw.setHeader("Access-Control-Allow-Origin", "*");
 
   try {
-    const stream = await agent.stream({
-      messages: [new HumanMessage(message)]
-    }, { ...config, streamMode: "messages" });
+    let stream;
+
+    // Manejo de acciones de control (approve/reject)
+    if (action === "approve") {
+      // Aprobar: continuar ejecución pausada
+      stream = await agent.stream(null, { ...config, streamMode: "messages" });
+    } else if (action === "reject") {
+      // Rechazar: actualizar estado con mensaje de cancelación
+      await agent.updateState(config, {
+        messages: [new AIMessage("Acción cancelada.")]
+      });
+
+      // Enviar mensaje de confirmación y cerrar
+      const payload = JSON.stringify({
+        content: "Acción cancelada.",
+        status: "success",
+        final: true
+      });
+      reply.raw.write(`data: ${payload}\n\n`);
+      reply.raw.end();
+      return;
+    } else {
+      // Flujo normal: nuevo mensaje del usuario
+      if (!message) {
+        const payload = JSON.stringify({
+          content: "Mensaje vacío.",
+          status: "error",
+          final: true
+        });
+        reply.raw.write(`data: ${payload}\n\n`);
+        reply.raw.end();
+        return;
+      }
+
+      stream = await agent.stream({
+        messages: [new HumanMessage(message)]
+      }, { ...config, streamMode: "messages" });
+    }
 
     for await (const [msg, metadata] of stream) {
       // Extraemos el texto de forma segura, ya sea string o bloques de Claude
@@ -58,14 +93,14 @@ server.post("/chat", async (request, reply) => {
     }
 
     // Al finalizar el stream, comprobamos si LangGraph se detuvo por una acción sensible
-    const state = await agent.getState(config);
-    const isPaused = state.next.includes("sensitive_tools");
+    const finalState = await agent.getState(config);
+    const isPausedNow = finalState.next.includes("sensitive_tools");
 
-    const finalPayload = JSON.stringify({ 
-      status: isPaused ? "pending_approval" : "success",
-      final: true 
+    const finalPayload = JSON.stringify({
+      status: isPausedNow ? "pending_approval" : "success",
+      final: true
     });
-    
+
     reply.raw.write(`data: ${finalPayload}\n\n`);
     reply.raw.end();
 
@@ -74,34 +109,6 @@ server.post("/chat", async (request, reply) => {
     const errorPayload = JSON.stringify({ error: "Stream error", status: "error" });
     reply.raw.write(`data: ${errorPayload}\n\n`);
     reply.raw.end();
-  }
-});
-
-/**
- * ENDPOINT DE APROBACIÓN: Reanuda el hilo pausado
- */
-server.post("/approve", async (request, reply) => {
-  const { threadId, holdedKey } = request.body as any;
-
-  if (!threadId || !holdedKey) {
-    return reply.code(400).send({ error: "Faltan threadId o holdedKey" });
-  }
-
-  try {
-    const agent = await createAgent(holdedKey);
-    const config = { configurable: { thread_id: threadId } };
-
-    // Continuar la ejecución desde el punto de interrupción
-    const result = await agent.invoke(null, config);
-
-    return {
-      status: "success",
-      response: result.messages.at(-1)?.content,
-      threadId
-    };
-  } catch (error: any) {
-    server.log.error(error);
-    return reply.code(500).send({ error: "Error al aprobar la acción" });
   }
 });
 

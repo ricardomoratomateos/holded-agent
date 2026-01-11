@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { chatWithAgentStreaming, approveAction, getChatHistory, deleteChatHistory } from '../api';
+import { chatWithAgentStreaming, getChatHistory, deleteChatHistory } from '../api';
 import type { Message } from '../types';
 
 export const useChat = (apiKey: string) => {
@@ -35,34 +35,38 @@ export const useChat = (apiKey: string) => {
   const sendMessage = async (text: string) => {
     if (!text.trim() || loading) return;
 
-    // 1. Añadimos el mensaje del usuario a la lista
-    const userMsg: Message = { 
-      role: 'user', 
-      content: text, 
-      timestamp: Date.now() 
-    };
-    setMessages(prev => [...prev, userMsg]);
     setLoading(true);
 
-    try {
-      // 2. Creamos el placeholder para el mensaje del asistente en streaming
-      setMessages(prev => [
-        ...prev, 
-        { 
-          role: 'assistant', 
-          content: '', 
-          status: 'streaming', 
-          timestamp: Date.now() 
-        }
-      ]);
+    // Añadir mensaje del usuario + placeholder del assistant
+    const userMsg: Message = {
+      role: 'user',
+      content: text,
+      timestamp: Date.now()
+    };
 
+    const assistantPlaceholder: Message = {
+      role: 'assistant',
+      content: '',
+      status: 'streaming',
+      timestamp: Date.now()
+    };
+
+    setMessages(prev => [...prev, userMsg, assistantPlaceholder]);
+
+    try {
       // 3. Iniciamos el streaming desde la API
       await chatWithAgentStreaming(text, threadId, apiKey, (chunk) => {
         setMessages(prev => {
-          const lastIndex = prev.length - 1;
-          if (lastIndex < 0) return prev;
+          // Buscar el último mensaje de assistant con status 'streaming'
+          const lastAssistantIndex = prev.length - 1;
+          const lastMsg = prev[lastAssistantIndex];
 
-          const lastMsg = prev[lastIndex];
+          // Verificar que es realmente el assistant
+          if (!lastMsg || lastMsg.role !== 'assistant') {
+            console.warn('Último mensaje no es assistant, ignorando chunk');
+            return prev;
+          }
+
           const updatedMsg = { ...lastMsg };
 
           // Acumulación de contenido (el backend ya filtra el contenido técnico)
@@ -77,7 +81,7 @@ export const useChat = (apiKey: string) => {
 
           // --- GESTIÓN DE ESTADOS (Finalización o Aprobación) ---
           if (chunk.status) {
-            updatedMsg.status = chunk.status; 
+            updatedMsg.status = chunk.status;
           }
 
           // Si el chunk indica que es el final y trae una respuesta limpia
@@ -85,7 +89,7 @@ export const useChat = (apiKey: string) => {
             updatedMsg.content = chunk.response;
           }
 
-          return [...prev.slice(0, lastIndex), updatedMsg];
+          return [...prev.slice(0, lastAssistantIndex), updatedMsg];
         });
       });
 
@@ -105,27 +109,133 @@ export const useChat = (apiKey: string) => {
     }
   };
 
-  const handleApproval = async () => {
-    const pendingIndex = [...messages].reverse().findIndex(m => m.status === 'pending_approval');
-    const actualIndex = pendingIndex !== -1 ? messages.length - 1 - pendingIndex : -1;
-
-    if (actualIndex === -1) return;
+  const handleApprove = async () => {
+    if (loading) return;
 
     setLoading(true);
-    try {
-      const data = await approveAction(threadId, apiKey);
-      
-      setMessages(prev => prev.map((msg, idx) => 
-        idx === actualIndex ? { ...msg, status: 'approved' as const } : msg
-      ));
 
-      setMessages(prev => [...prev, { 
-        role: 'assistant', 
-        content: data.response,
-        status: 'success' as const
-      }]);
+    // 1. Primero, remover el estado 'pending_approval' del último mensaje
+    // 2. Luego, añadir placeholder para la respuesta del assistant
+    setMessages(prev => {
+      const updated = [...prev];
+      const lastMsg = updated[updated.length - 1];
+
+      if (lastMsg && lastMsg.status === 'pending_approval') {
+        updated[updated.length - 1] = { ...lastMsg, status: 'success' };
+      }
+
+      // Añadir nuevo mensaje de respuesta
+      const assistantPlaceholder: Message = {
+        role: 'assistant',
+        content: '',
+        status: 'streaming',
+        timestamp: Date.now()
+      };
+
+      return [...updated, assistantPlaceholder];
+    });
+
+    try {
+      await chatWithAgentStreaming('', threadId, apiKey, (chunk) => {
+        setMessages(prev => {
+          const lastAssistantIndex = prev.length - 1;
+          const lastMsg = prev[lastAssistantIndex];
+
+          if (!lastMsg || lastMsg.role !== 'assistant') {
+            console.warn('Último mensaje no es assistant, ignorando chunk');
+            return prev;
+          }
+
+          const updatedMsg = { ...lastMsg };
+
+          if (chunk.content) {
+            if (typeof chunk.content === 'string') {
+              updatedMsg.content = updatedMsg.content + chunk.content;
+            } else {
+              updatedMsg.content = chunk.content;
+            }
+          }
+
+          if (chunk.status) {
+            updatedMsg.status = chunk.status;
+          }
+
+          if (chunk.final && chunk.response && typeof chunk.response === 'string') {
+            updatedMsg.content = chunk.response;
+          }
+
+          return [...prev.slice(0, lastAssistantIndex), updatedMsg];
+        });
+      }, 'approve'); // <-- Pasar action='approve'
     } catch (error) {
-      console.error(error);
+      console.error("Error en aprobación:", error);
+      setMessages(prev => {
+        const msgs = [...prev];
+        const last = msgs[msgs.length - 1];
+        if (last && last.status === 'streaming') {
+          msgs[msgs.length - 1] = { ...last, status: 'error', content: 'Error al aprobar la acción.' };
+          return msgs;
+        }
+        return prev;
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleReject = async () => {
+    if (loading) return;
+
+    setLoading(true);
+
+    // 1. Primero, remover el estado 'pending_approval' del último mensaje
+    // 2. Luego, añadir placeholder para la respuesta del assistant
+    setMessages(prev => {
+      const updated = [...prev];
+      const lastMsg = updated[updated.length - 1];
+
+      if (lastMsg && lastMsg.status === 'pending_approval') {
+        updated[updated.length - 1] = { ...lastMsg, status: 'success' };
+      }
+
+      // Añadir nuevo mensaje de respuesta
+      const assistantPlaceholder: Message = {
+        role: 'assistant',
+        content: '',
+        status: 'streaming',
+        timestamp: Date.now()
+      };
+
+      return [...updated, assistantPlaceholder];
+    });
+
+    try {
+      await chatWithAgentStreaming('', threadId, apiKey, (chunk) => {
+        setMessages(prev => {
+          const lastAssistantIndex = prev.length - 1;
+          const lastMsg = prev[lastAssistantIndex];
+
+          if (!lastMsg || lastMsg.role !== 'assistant') {
+            return prev;
+          }
+
+          const updatedMsg = { ...lastMsg };
+
+          if (chunk.content) {
+            updatedMsg.content = typeof chunk.content === 'string'
+              ? updatedMsg.content + chunk.content
+              : chunk.content;
+          }
+
+          if (chunk.status) {
+            updatedMsg.status = chunk.status;
+          }
+
+          return [...prev.slice(0, lastAssistantIndex), updatedMsg];
+        });
+      }, 'reject'); // <-- Pasar action='reject'
+    } catch (error) {
+      console.error("Error en rechazo:", error);
     } finally {
       setLoading(false);
     }
@@ -154,5 +264,5 @@ export const useChat = (apiKey: string) => {
     window.location.reload();
   };
 
-  return { messages, loading, sendMessage, handleApproval, clearChat, messagesEndRef };
+  return { messages, loading, sendMessage, handleApprove, handleReject, clearChat, messagesEndRef };
 };

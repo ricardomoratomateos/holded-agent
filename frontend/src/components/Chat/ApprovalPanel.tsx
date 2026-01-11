@@ -1,8 +1,8 @@
 import { Check, X } from 'lucide-react';
 
 interface ApprovalPanelProps {
-  onApprove?: () => void;
-  onReject?: () => void;
+  onApprove: () => void;
+  onReject: () => void;
 }
 
 export const ApprovalPanel = ({ onApprove, onReject }: ApprovalPanelProps) => {
