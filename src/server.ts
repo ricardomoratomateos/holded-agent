@@ -1,7 +1,9 @@
 import Fastify from "fastify";
 import cors from "@fastify/cors";
 import { createAgent } from "./agent/graph.js";
-import { HumanMessage } from "@langchain/core/messages";
+import { SSEWriter } from "./utils/sseWriter.js";
+import { getChatStrategy } from "./strategies/chatStrategy.js";
+import { validateChatRequest, ChatValidationError } from "./validators/chatValidator.js";
 
 const server = Fastify({ logger: true });
 
@@ -17,98 +19,52 @@ await server.register(cors, {
  * ENDPOINT PRINCIPAL: Streaming de mensajes con soporte para interrupciones
  */
 server.post("/chat", async (request, reply) => {
-  const { message, threadId, holdedKey, action } = request.body as any;
-  const agent = await createAgent(holdedKey);
-  const config = { configurable: { thread_id: threadId } };
-
-  // Configuración manual de cabeceras para Server-Sent Events (SSE)
-  reply.raw.setHeader("Content-Type", "text/event-stream");
-  reply.raw.setHeader("Cache-Control", "no-cache");
-  reply.raw.setHeader("Connection", "keep-alive");
-  reply.raw.setHeader("Access-Control-Allow-Origin", "*");
-
   try {
-    let stream;
+    const body = request.body as any;
 
-    // Manejo de acciones de control (approve/reject)
-    if (action === "approve") {
-      // Aprobar: continuar ejecución pausada
-      stream = await agent.stream(null, { ...config, streamMode: "messages" });
-    } else if (action === "reject") {
-      // Rechazar: actualizar estado con mensaje de cancelación
-      await agent.updateState(config, {
-        messages: [new AIMessage("Acción cancelada.")]
-      });
+    // Validar request
+    validateChatRequest(body);
 
-      // Enviar mensaje de confirmación y cerrar
-      const payload = JSON.stringify({
-        content: "Acción cancelada.",
-        status: "success",
-        final: true
-      });
-      reply.raw.write(`data: ${payload}\n\n`);
-      reply.raw.end();
-      return;
-    } else {
-      // Flujo normal: nuevo mensaje del usuario
-      if (!message) {
-        const payload = JSON.stringify({
-          content: "Mensaje vacío.",
-          status: "error",
-          final: true
-        });
-        reply.raw.write(`data: ${payload}\n\n`);
-        reply.raw.end();
-        return;
-      }
+    // Crear agente y configuración
+    const agent = await createAgent(body.holdedKey);
+    const config = { configurable: { thread_id: body.threadId } };
 
-      stream = await agent.stream({
-        messages: [new HumanMessage(message)]
-      }, { ...config, streamMode: "messages" });
-    }
+    // Crear writer SSE
+    const writer = new SSEWriter(reply);
+    writer.setupHeaders();
 
-    for await (const [msg, metadata] of stream) {
-      // Extraemos el texto de forma segura, ya sea string o bloques de Claude
-      let textContent = "";
-      const content = (msg as any).content;
+    // Obtener estrategia según tipo de request
+    // TODO: detectar isMultipart cuando añadamos soporte de archivos
+    const strategy = getChatStrategy(body.action, false);
 
-      if (typeof content === 'string') {
-        textContent = content;
-      } else if (Array.isArray(content)) {
-        textContent = content
-          .filter((c: any) => c.type === 'text')
-          .map((c: any) => c.text)
-          .join("");
-      }
-
-      // Solo enviamos si hay texto y proviene del nodo del agente
-      if (textContent && (metadata as any).langgraph_node === "agent") {
-        const payload = JSON.stringify({
-          content: textContent,
-          status: "streaming"
-        });
-        // El formato "data: ...\n\n" es obligatorio para que el navegador lo procese
-        reply.raw.write(`data: ${payload}\n\n`);
-      }
-    }
-
-    // Al finalizar el stream, comprobamos si LangGraph se detuvo por una acción sensible
-    const finalState = await agent.getState(config);
-    const isPausedNow = finalState.next.includes("sensitive_tools");
-
-    const finalPayload = JSON.stringify({
-      status: isPausedNow ? "pending_approval" : "success",
-      final: true
+    // Ejecutar estrategia
+    await strategy.handle({
+      agent,
+      config,
+      writer,
+      message: body.message
     });
-
-    reply.raw.write(`data: ${finalPayload}\n\n`);
-    reply.raw.end();
 
   } catch (error) {
     server.log.error(error);
-    const errorPayload = JSON.stringify({ error: "Stream error", status: "error" });
-    reply.raw.write(`data: ${errorPayload}\n\n`);
-    reply.raw.end();
+
+    // Si es un error de validación, enviar error específico
+    if (error instanceof ChatValidationError) {
+      const errorPayload = JSON.stringify({
+        error: error.message,
+        status: "error"
+      });
+      reply.raw.write(`data: ${errorPayload}\n\n`);
+      reply.raw.end();
+    } else {
+      // Error genérico
+      const errorPayload = JSON.stringify({
+        error: "Stream error",
+        status: "error"
+      });
+      reply.raw.write(`data: ${errorPayload}\n\n`);
+      reply.raw.end();
+    }
   }
 });
 
