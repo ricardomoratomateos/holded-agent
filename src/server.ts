@@ -85,7 +85,7 @@ server.post("/chat", async (request, reply) => {
     writer.setupHeaders();
 
     // Obtener estrategia según tipo de request
-    const strategy = getChatStrategy(body.action, false);
+    const strategy = await getChatStrategy(body.action, false);
 
     // Ejecutar estrategia
     await strategy.handle({

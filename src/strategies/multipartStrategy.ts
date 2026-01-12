@@ -17,7 +17,7 @@ export class MultipartStrategy implements ChatStrategy {
 
     // Por ahora, simplemente redirige a NormalMessageStrategy
     // La lógica de guardado de archivos se maneja en el server
-    const { NormalMessageStrategy } = require('./normalMessageStrategy.js');
+    const { NormalMessageStrategy } = await import('./normalMessageStrategy.js');
     const normalStrategy = new NormalMessageStrategy();
     await normalStrategy.handle({ agent, config, writer, message });
   }
