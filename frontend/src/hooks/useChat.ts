@@ -32,8 +32,9 @@ export const useChat = (apiKey: string) => {
     scrollToBottom();
   }, [messages, loading]);
 
-  const sendMessage = async (text: string) => {
-    if (!text.trim() || loading) return;
+  const sendMessage = async (text: string, file?: File) => {
+    if (!text.trim() && !file) return;
+    if (loading) return;
 
     setLoading(true);
 
@@ -55,7 +56,7 @@ export const useChat = (apiKey: string) => {
 
     try {
       // 3. Iniciamos el streaming desde la API
-      await chatWithAgentStreaming(text, threadId, apiKey, (chunk) => {
+      await chatWithAgentStreaming(text || '', threadId, apiKey, file, (chunk) => {
         setMessages(prev => {
           // Buscar el último mensaje de assistant con status 'streaming'
           const lastAssistantIndex = prev.length - 1;
@@ -136,7 +137,7 @@ export const useChat = (apiKey: string) => {
     });
 
     try {
-      await chatWithAgentStreaming('', threadId, apiKey, (chunk) => {
+      await chatWithAgentStreaming('', threadId, apiKey, undefined, (chunk) => {
         setMessages(prev => {
           const lastAssistantIndex = prev.length - 1;
           const lastMsg = prev[lastAssistantIndex];
@@ -210,7 +211,7 @@ export const useChat = (apiKey: string) => {
     });
 
     try {
-      await chatWithAgentStreaming('', threadId, apiKey, (chunk) => {
+      await chatWithAgentStreaming('', threadId, apiKey, undefined, (chunk) => {
         setMessages(prev => {
           const lastAssistantIndex = prev.length - 1;
           const lastMsg = prev[lastAssistantIndex];

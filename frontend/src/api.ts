@@ -13,18 +13,41 @@ export const chatWithAgentStreaming = async (
   message: string,
   threadId: string,
   holdedKey: string,
+  file: File | undefined,
   onChunk: (chunk: any) => void,
   action?: 'approve' | 'reject'
 ) => {
-  const body: any = { message, threadId, holdedKey };
-  if (action) {
-    body.action = action;
+  let body: FormData | string;
+  let headers: Record<string, string> = {};
+
+  // Si hay archivo, usar FormData
+  if (file) {
+    const formData = new FormData();
+    formData.append('message', message);
+    formData.append('threadId', threadId);
+    formData.append('holdedKey', holdedKey);
+    formData.append('file', file);
+
+    if (action) {
+      formData.append('action', action);
+    }
+
+    body = formData;
+    // NO establecer Content-Type, el browser lo hace automáticamente con boundary
+  } else {
+    // JSON normal
+    const jsonBody: any = { message, threadId, holdedKey };
+    if (action) {
+      jsonBody.action = action;
+    }
+    body = JSON.stringify(jsonBody);
+    headers['Content-Type'] = 'application/json';
   }
 
   const response = await fetch(`${API_URL}/chat`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
+    headers,
+    body,
   });
 
   const reader = response.body?.getReader();
