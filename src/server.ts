@@ -36,7 +36,10 @@ await server.register(multipart, {
  */
 server.post("/chat", async (request, reply) => {
   try {
-    const isMultipart = request.isMultipart;
+    // Detectar si es multipart por el Content-Type header
+    const contentType = request.headers['content-type'] || '';
+    const isMultipart = contentType.includes('multipart/form-data');
+
     let body: any = {};
     let documentPath: string | undefined;
 
