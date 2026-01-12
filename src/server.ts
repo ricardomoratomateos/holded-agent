@@ -1,5 +1,8 @@
 import Fastify from "fastify";
 import cors from "@fastify/cors";
+import multipart from "@fastify/multipart";
+import fs from "fs";
+import path from "path";
 import { createAgent } from "./agent/graph.js";
 import { SSEWriter } from "./utils/sseWriter.js";
 import { getChatStrategy } from "./strategies/chatStrategy.js";
@@ -7,12 +10,25 @@ import { validateChatRequest, ChatValidationError } from "./validators/chatValid
 
 const server = Fastify({ logger: true });
 
+// Crear carpeta uploads si no existe
+const uploadsDir = './uploads';
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
 // Habilitar CORS para conectar con React
-await server.register(cors, { 
+await server.register(cors, {
   origin: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true
+});
+
+// Habilitar soporte para multipart/form-data (file uploads)
+await server.register(multipart, {
+  limits: {
+    fileSize: 10 * 1024 * 1024 // 10MB max
+  }
 });
 
 /**
@@ -20,10 +36,45 @@ await server.register(cors, {
  */
 server.post("/chat", async (request, reply) => {
   try {
-    const body = request.body as any;
+    const isMultipart = request.isMultipart;
+    let body: any = {};
+    let documentPath: string | undefined;
+
+    // Procesar request (multipart o JSON)
+    if (isMultipart) {
+      // Procesar multipart/form-data
+      const parts = request.parts();
+
+      for await (const part of parts) {
+        if (part.type === 'file') {
+          // Guardar archivo
+          const buffer = await part.toBuffer();
+          const timestamp = Date.now();
+          const filename = `${timestamp}-${part.filename}`;
+          const filepath = path.join(uploadsDir, filename);
+
+          fs.writeFileSync(filepath, buffer);
+          documentPath = filepath;
+
+          console.log(`📎 Archivo guardado: ${filepath}`);
+        } else {
+          // Es un campo de texto
+          body[part.fieldname] = (part as any).value;
+        }
+      }
+    } else {
+      // JSON normal
+      body = request.body as any;
+    }
 
     // Validar request
     validateChatRequest(body);
+
+    // Si hay documento adjunto, añadirlo al mensaje
+    let finalMessage = body.message;
+    if (documentPath) {
+      finalMessage = `${body.message || 'Analiza el documento adjunto'}\n\n[Documento adjunto: ${documentPath}]`;
+    }
 
     // Crear agente y configuración
     const agent = await createAgent(body.holdedKey);
@@ -34,7 +85,6 @@ server.post("/chat", async (request, reply) => {
     writer.setupHeaders();
 
     // Obtener estrategia según tipo de request
-    // TODO: detectar isMultipart cuando añadamos soporte de archivos
     const strategy = getChatStrategy(body.action, false);
 
     // Ejecutar estrategia
@@ -42,7 +92,7 @@ server.post("/chat", async (request, reply) => {
       agent,
       config,
       writer,
-      message: body.message
+      message: finalMessage
     });
 
   } catch (error) {

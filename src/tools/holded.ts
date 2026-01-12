@@ -1,26 +1,50 @@
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";
+import fs from 'fs';
+import * as pathModule from 'path';
 
 /**
  * Función que genera la herramienta inyectando la API Key dinámicamente.
  * Esto permite que el agente funcione para cualquier usuario que envíe su clave.
  */
 export const createHoldedTool = (apiKey: string) => tool(
-  async ({ method, path, data }) => {
+  async ({ method, path, data, filePath }) => {
     // Usamos la apiKey pasada por parámetro en lugar de process.env
     const url = `https://api.holded.com/api/${path.replace(/^\//, "")}`;
 
-    const options: RequestInit = {
-      method: method.toUpperCase(),
-      headers: {
-        "key": apiKey, 
-        "Content-Type": "application/json",
-        "Accept": "application/json"
-      }
-    };
+    let options: RequestInit;
 
-    if (method.toUpperCase() !== "GET" && data) {
-      options.body = JSON.stringify(data);
+    // Si hay filePath, usar multipart/form-data
+    if (filePath) {
+      const FormData = (await import('form-data')).default;
+      const formData = new FormData();
+      const fileBuffer = fs.readFileSync(filePath);
+      const fileName = pathModule.basename(filePath);
+
+      formData.append('file', fileBuffer, fileName);
+
+      options = {
+        method: method.toUpperCase(),
+        headers: {
+          "key": apiKey,
+          ...formData.getHeaders()
+        },
+        body: formData as any
+      };
+    } else {
+      // Request JSON normal
+      options = {
+        method: method.toUpperCase(),
+        headers: {
+          "key": apiKey,
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        }
+      };
+
+      if (method.toUpperCase() !== "GET" && data) {
+        options.body = JSON.stringify(data);
+      }
     }
 
     console.log(`--- Llamando a Holded (Multi-Account): ${options.method} ${url} ---`);
@@ -46,6 +70,7 @@ export const createHoldedTool = (apiKey: string) => tool(
       method: z.enum(["GET", "POST", "PUT", "DELETE"]),
       path: z.string().describe("El path del endpoint sin el prefijo /api/"),
       data: z.any().optional().describe("Objeto JSON con los datos para POST/PUT"),
+      filePath: z.string().optional().describe("Ruta local al archivo para adjuntar (para endpoints que aceptan archivos)"),
     }),
   }
 );

@@ -43,4 +43,5 @@ Thumbs.db
 .parcel-cache
 .claude/
 
-data/
+data//uploads/
+/tmp/

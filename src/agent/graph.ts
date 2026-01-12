@@ -5,6 +5,7 @@ import { AIMessage } from "@langchain/core/messages";
 import { DynamicTool } from "@langchain/core/tools";
 
 import { createHoldedTool } from "../tools/holded.js";
+import { analyzeDocumentTool } from "../tools/vision.js";
 import { getResearcherTools } from "../tools/mcp.js";
 import { getBrowserTools } from "../tools/playwright-mcp.js";
 import { AgentState } from "./state.js";
@@ -38,7 +39,7 @@ export async function createAgent(holdedApiKey: string) {
     // --- LA CLAVE ESTÁ AQUÍ ---
     // Ambos nodos necesitan tener acceso a las herramientas,
     // pero el flujo decidirá por cuál pasar según el tipo de operación.
-    const allTools = [holdedTool, ...formattedMcpTools, ...formattedBrowserTools];
+    const allTools = [holdedTool, analyzeDocumentTool, ...formattedMcpTools, ...formattedBrowserTools];
 
     const model = new ChatAnthropic({
         modelName: "claude-haiku-4-5",
