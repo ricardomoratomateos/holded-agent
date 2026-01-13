@@ -1,15 +1,22 @@
 import { useState, useEffect, useRef } from 'react';
 import { Header } from './components/Layout/Header';
-import { ChatContainer } from './components/Chat/ChatContainer';
 import { SettingsModal } from './components/Settings/SettingsModal';
+import { AssistantChat } from './components/AssistantChat';
 import { useApiKey } from './hooks/useApiKey';
-import { useChat } from './hooks/useChat';
 
 function App() {
   const { apiKey, isConfigured, isLoading, saveApiKey, clearApiKey } = useApiKey();
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const { messages, loading, sendMessage, handleApprove, handleReject, clearChat, messagesEndRef } = useChat(apiKey);
   const hasInitialized = useRef(false);
+
+  // Thread ID persistente
+  const [threadId] = useState(() => {
+    const saved = localStorage.getItem('holded_thread_id');
+    if (saved) return saved;
+    const newId = `session-${Math.random().toString(36).substr(2, 9)}`;
+    localStorage.setItem('holded_thread_id', newId);
+    return newId;
+  });
 
   // Mostrar settings solo la primera vez si no hay API key (después de cargar)
   useEffect(() => {
@@ -21,6 +28,13 @@ function App() {
     }
   }, [isLoading, isConfigured]);
 
+  const clearChat = async () => {
+    // Generar nuevo thread ID
+    const newThreadId = `session-${Math.random().toString(36).substr(2, 9)}`;
+    localStorage.setItem('holded_thread_id', newThreadId);
+    window.location.reload();
+  };
+
   return (
     <div className="flex flex-col h-screen bg-gray-50">
       <Header
@@ -29,14 +43,25 @@ function App() {
         hasApiKey={isConfigured}
       />
 
-      <ChatContainer
-        messages={messages}
-        loading={loading}
-        messagesEndRef={messagesEndRef}
-        onSend={sendMessage}
-        onApprove={handleApprove}
-        onReject={handleReject}
-      />
+      {isConfigured ? (
+        <div className="flex-1 overflow-hidden">
+          <AssistantChat apiKey={apiKey} threadId={threadId} />
+        </div>
+      ) : (
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <p className="text-gray-500 mb-4">
+              Configura tu API key para comenzar
+            </p>
+            <button
+              onClick={() => setSettingsOpen(true)}
+              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
+            >
+              Abrir Configuración
+            </button>
+          </div>
+        </div>
+      )}
 
       <SettingsModal
         isOpen={settingsOpen}

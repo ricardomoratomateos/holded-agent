@@ -29,11 +29,9 @@ export class NormalMessageStrategy implements ChatStrategy {
     // Procesar el stream
     await this.streamProcessor.processStream(stream, writer);
 
-    // Comprobar si LangGraph se detuvo por una acción sensible
-    const isPaused = await AgentStateDetector.isPaused(agent, config);
-
+    // Finalizar con éxito
     writer.write({
-      status: isPaused ? "pending_approval" : "success",
+      status: "success",
       final: true
     });
 

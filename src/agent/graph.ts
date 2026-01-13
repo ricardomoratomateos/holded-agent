@@ -50,32 +50,15 @@ export async function createAgent(holdedApiKey: string) {
         .addNode("agent", async (state) => ({
             messages: [await model.invoke([HOLDED_AGENT_SYSTEM_PROMPT, ...state.messages])]
         }))
-        // Ambos nodos de herramientas pueden ejecutar holdedTool
-        .addNode("safe_tools", new ToolNode(allTools))
-        .addNode("sensitive_tools", new ToolNode(allTools))
-        
+        .addNode("tools", new ToolNode(allTools))
         .addEdge(START, "agent")
-        
         .addConditionalEdges("agent", (state: typeof AgentState.State) => {
             const lastMessage = state.messages.at(-1) as AIMessage;
             if (!lastMessage?.tool_calls?.length) return END;
-
-            // Verificamos si hay alguna llamada a Holded que sea DELETE, PUT o POST (escritura)
-            const hasSensitiveCall = lastMessage.tool_calls.some(call => {
-                const args = call.args as any;
-                const isHolded = call.name === "call_holded_api";
-                const isWriteOp = ["DELETE", "PUT", "POST"].includes(args.method?.toUpperCase());
-                return isHolded && isWriteOp;
-            });
-
-            return hasSensitiveCall ? "sensitive_tools" : "safe_tools";
+            return "tools";
         })
-        
-        .addEdge("safe_tools", "agent")
-        .addEdge("sensitive_tools", "agent");
 
-    return workflow.compile({ 
-        checkpointer,
-        interruptBefore: ["sensitive_tools"] 
-    });
+        .addEdge("tools", "agent");
+
+    return workflow.compile({ checkpointer });
 }

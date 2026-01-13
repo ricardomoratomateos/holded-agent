@@ -8,6 +8,11 @@ export class StreamProcessor {
     for await (const [msg, metadata] of stream) {
       const textContent = this.extractTextContent(msg);
 
+      // Log para debug: ver todas las tool calls
+      if ((msg as any).tool_calls?.length > 0) {
+        console.log('🔧 Tool calls:', (msg as any).tool_calls.map((tc: any) => tc.name));
+      }
+
       // Solo enviamos si hay texto y proviene del nodo del agente
       if (textContent && (metadata as any).langgraph_node === "agent") {
         writer.write({

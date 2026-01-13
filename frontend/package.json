@@ -10,6 +10,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@assistant-ui/react": "^0.11.53",
+    "@assistant-ui/react-langgraph": "^0.7.13",
+    "@assistant-ui/react-markdown": "^0.11.9",
     "assistant-ui": "^0.0.70",
     "highlight.js": "^11.11.1",
     "lucide-react": "^0.562.0",
@@ -18,7 +21,8 @@
     "react-markdown": "^10.1.0",
     "react-textarea-autosize": "^8.5.9",
     "rehype-highlight": "^7.0.2",
-    "remark-gfm": "^4.0.1"
+    "remark-gfm": "^4.0.1",
+    "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",

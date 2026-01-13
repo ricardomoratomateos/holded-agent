@@ -43,5 +43,8 @@ Thumbs.db
 .parcel-cache
 .claude/
 
-data//uploads/
-/tmp/
+# --- Datos Temporales ---
+data/
+uploads/*
+!uploads/.gitkeep
+tmp/

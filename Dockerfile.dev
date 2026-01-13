@@ -1,0 +1,21 @@
+FROM node:20-slim
+
+WORKDIR /app
+
+# Copiar package.json y package-lock.json
+COPY package*.json ./
+
+# Instalar dependencias
+RUN npm install
+
+# Crear directorio data con permisos
+RUN mkdir -p /app/data && chmod 777 /app/data
+RUN mkdir -p /app/uploads && chmod 777 /app/uploads
+
+# El código fuente se montará como volumen
+# No hacer COPY del código para permitir hot reload
+
+EXPOSE 3300
+
+# El comando se define en docker-compose.dev.yml
+# Por defecto: npm run dev:watch

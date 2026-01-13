@@ -32,6 +32,38 @@ await server.register(multipart, {
 });
 
 /**
+ * ENDPOINT DE UPLOAD: Subir archivos (imágenes/PDFs) antes del chat
+ */
+server.post("/chat/upload", async (request, reply) => {
+  try {
+    const data = await request.file();
+
+    if (!data) {
+      return reply.code(400).send({ error: 'No file uploaded' });
+    }
+
+    const mimeType = data.mimetype;
+    if (!mimeType.startsWith('image/') && mimeType !== 'application/pdf') {
+      return reply.code(400).send({ error: 'Solo se permiten imágenes y PDFs' });
+    }
+
+    const timestamp = Date.now();
+    const filename = `${timestamp}-${data.filename}`;
+    const filepath = path.join(uploadsDir, filename);
+    const buffer = await data.toBuffer();
+
+    fs.writeFileSync(filepath, buffer);
+
+    console.log(`📎 Archivo subido: ${filepath}`);
+
+    return { success: true, documentPath: filepath };
+  } catch (error) {
+    server.log.error(error);
+    return reply.code(500).send({ error: 'Error al subir archivo' });
+  }
+});
+
+/**
  * ENDPOINT PRINCIPAL: Streaming de mensajes con soporte para interrupciones
  */
 server.post("/chat", async (request, reply) => {
@@ -73,10 +105,12 @@ server.post("/chat", async (request, reply) => {
     // Validar request
     validateChatRequest(body);
 
-    // Si hay documento adjunto, añadirlo al mensaje
+    // Si hay documento adjunto (ya sea del multipart o del body.documentPath)
     let finalMessage = body.message;
-    if (documentPath) {
-      finalMessage = `${body.message || 'Analiza el documento adjunto'}\n\n[Documento adjunto: ${documentPath}]`;
+    const finalDocumentPath = documentPath || body.documentPath;
+
+    if (finalDocumentPath) {
+      finalMessage = `${body.message || 'Analiza el documento adjunto'}\n\n[Documento adjunto: ${finalDocumentPath}]`;
     }
 
     // Crear agente y configuración
@@ -87,8 +121,8 @@ server.post("/chat", async (request, reply) => {
     const writer = new SSEWriter(reply);
     writer.setupHeaders();
 
-    // Obtener estrategia según tipo de request
-    const strategy = await getChatStrategy(body.action, false);
+    // Obtener estrategia
+    const strategy = await getChatStrategy();
 
     // Ejecutar estrategia
     await strategy.handle({
