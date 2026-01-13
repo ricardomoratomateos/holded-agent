@@ -48,12 +48,15 @@ const ThreadWelcome: FC = () => {
       <h2 className="text-2xl font-bold text-gray-800 mb-2">
         Asistente de Holded
       </h2>
-      <p className="text-gray-600">
-        Puedo ayudarte a consultar y gestionar tu cuenta de Holded.
+      <p className="text-gray-600 mb-4">
+        Tu agente investigador y gestor de Holded
       </p>
-      <p className="text-sm text-gray-500 mt-2">
-        También puedes adjuntar facturas o imágenes para analizarlas.
-      </p>
+      <div className="text-sm text-gray-600 max-w-md space-y-1.5 text-left">
+        <p>✅ Consultar datos - Contactos, facturas, documentos</p>
+        <p>✅ Crear y modificar - Facturas, presupuestos, pedidos</p>
+        <p>✅ Analizar imágenes y PDFs - Facturas, recibos, cualquier documento</p>
+        <p>✅ Buscar información - Documentación técnica y guías de Holded</p>
+      </div>
     </div>
   );
 };
