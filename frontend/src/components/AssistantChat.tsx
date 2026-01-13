@@ -13,16 +13,30 @@ interface AssistantChatProps {
 export function AssistantChat({ apiKey, threadId }: AssistantChatProps) {
   const [initialMessages, setInitialMessages] = useState<any[] | null>(null);
 
-  // Cargar historial inicial
+  // Cargar historial inicial antes de crear el runtime
   useEffect(() => {
     const loadHistory = async () => {
       const history = await loadHistoryFromBackend(threadId, apiKey);
-      setInitialMessages(history);
+      setInitialMessages(history || []);
     };
 
     loadHistory();
   }, [apiKey, threadId]);
 
+  // Mostrar loading mientras carga el historial
+  if (initialMessages === null) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="animate-pulse text-gray-500">Cargando historial...</div>
+      </div>
+    );
+  }
+
+  // Solo renderizar el chat cuando ya tenemos el historial
+  return <AssistantChatContent apiKey={apiKey} threadId={threadId} initialMessages={initialMessages} />;
+}
+
+function AssistantChatContent({ apiKey, threadId, initialMessages }: AssistantChatProps & { initialMessages: any[] }) {
   // Crear adapters memoizados
   const adapter = useMemo(
     () => createHoldedAdapter({ apiKey, threadId }),
@@ -34,24 +48,13 @@ export function AssistantChat({ apiKey, threadId }: AssistantChatProps) {
     [apiKey]
   );
 
-  // Crear runtime con soporte para attachments
+  // Crear runtime con soporte para attachments e historial inicial
   const runtime = useLocalRuntime(adapter, {
     adapters: {
       attachments: attachmentAdapter,
     },
+    initialMessages,
   });
-
-  // Nota: LocalRuntime no soporta nativamente cargar historial inicial
-  // El historial se carga desde el backend en cada interacción
-
-  // Mostrar loading mientras carga el historial
-  if (initialMessages === null) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div className="animate-pulse text-gray-500">Cargando historial...</div>
-      </div>
-    );
-  }
 
   return (
     <AssistantRuntimeProvider runtime={runtime}>
