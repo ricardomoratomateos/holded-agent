@@ -13,8 +13,13 @@ export class StreamProcessor {
         console.log('🔧 Tool calls:', (msg as any).tool_calls.map((tc: any) => tc.name));
       }
 
-      // Solo enviamos si hay texto y proviene del nodo del agente
-      if (textContent && (metadata as any).langgraph_node === "agent") {
+      // Solo enviamos si hay texto
+      // Excluimos explícitamente el supervisor si llegara a emitir algo técnico, 
+      // pero permitimos cualquier otro nodo que genere contenido para el usuario.
+      const nodeName = (metadata as any).langgraph_node || "";
+      const isInternalNode = nodeName === "supervisor" || nodeName.includes("tools");
+
+      if (textContent && !isInternalNode) {
         writer.write({
           content: textContent,
           status: "streaming"

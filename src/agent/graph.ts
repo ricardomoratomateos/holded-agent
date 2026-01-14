@@ -1,4 +1,3 @@
-import { ChatAnthropic } from "@langchain/anthropic";
 import { StateGraph, START, END } from "@langchain/langgraph";
 import { ToolNode } from "@langchain/langgraph/prebuilt";
 import { AIMessage } from "@langchain/core/messages";
@@ -8,57 +7,87 @@ import { createHoldedTool } from "../tools/holded.js";
 import { analyzeDocumentTool } from "../tools/vision.js";
 import { getResearcherTools } from "../tools/mcp.js";
 import { getBrowserTools } from "../tools/playwright-mcp.js";
-import { AgentState } from "./state.js";
-import { HOLDED_AGENT_SYSTEM_PROMPT } from "./prompts.js";
 import { checkpointer } from "../database/persistence.js";
 
+import { AgentState } from "./state.js";
+import { supervisorNode } from "./agents/supervisor.js";
+import { createHoldedAgentNode } from "./agents/holded-agent.js";
+import { createAnalyticsAgentNode } from "./agents/analytics-agent.js";
+
 export async function createAgent(holdedApiKey: string) {
-    const holdedTool = createHoldedTool(holdedApiKey);
-    const mcpRawTools = await getResearcherTools();
-    const browserRawTools = await getBrowserTools();
+  // 1. Preparar herramientas
+  const holdedTool = createHoldedTool(holdedApiKey);
+  const holdedToolReadOnly = createHoldedTool(holdedApiKey, { readOnly: true });
+  
+  const mcpRawTools = await getResearcherTools();
+  const browserRawTools = await getBrowserTools();
 
-    const formattedMcpTools = mcpRawTools.map(t => new DynamicTool({
-        name: t.name,
-        description: t.description ?? `Búsqueda`,
-        func: async (args) => {
-            const formattedArgs = typeof args === 'string' ? { query: args } : args;
-            const result = await (t as any).execute(formattedArgs);
-            return JSON.stringify(result);
-        }
-    }));
+  const formattedMcpTools = mcpRawTools.map(t => new DynamicTool({
+    name: t.name,
+    description: t.description ?? `Búsqueda`,
+    func: async (args) => {
+      const formattedArgs = typeof args === 'string' ? { query: args } : args;
+      const result = await (t as any).execute(formattedArgs);
+      return JSON.stringify(result);
+    }
+  }));
 
-    const formattedBrowserTools = browserRawTools.map(t => new DynamicTool({
-        name: t.name,
-        description: t.description ?? `Automatización de navegador`,
-        func: async (args) => {
-            const result = await (t as any).execute(args);
-            return JSON.stringify(result);
-        }
-    }));
+  const formattedBrowserTools = browserRawTools.map(t => new DynamicTool({
+    name: t.name,
+    description: t.description ?? `Automatización de navegador`,
+    func: async (args) => {
+      const result = await (t as any).execute(args);
+      return JSON.stringify(result);
+    }
+  }));
 
-    // --- LA CLAVE ESTÁ AQUÍ ---
-    // Ambos nodos necesitan tener acceso a las herramientas,
-    // pero el flujo decidirá por cuál pasar según el tipo de operación.
-    const allTools = [holdedTool, analyzeDocumentTool, ...formattedMcpTools, ...formattedBrowserTools];
+  const commonTools = [...formattedMcpTools, ...formattedBrowserTools];
+  const holdedAgentTools = [holdedTool, analyzeDocumentTool, ...commonTools];
+  const analyticsAgentTools = [holdedToolReadOnly, ...commonTools];
 
-    const model = new ChatAnthropic({
-        modelName: "claude-haiku-4-5",
-        temperature: 0,
-    }).bindTools(allTools);
+  // 2. Crear Grafo
+  const workflow = new StateGraph(AgentState)
+    .addNode("supervisor", supervisorNode)
+    .addNode("holded_agent", createHoldedAgentNode(holdedAgentTools))
+    .addNode("analytics_agent", createAnalyticsAgentNode(analyticsAgentTools))
+    
+    // Nodos de herramientas
+    .addNode("holded_tools", new ToolNode(holdedAgentTools))
+    .addNode("analytics_tools", new ToolNode(analyticsAgentTools));
 
-    const workflow = new StateGraph(AgentState)
-        .addNode("agent", async (state) => ({
-            messages: [await model.invoke([HOLDED_AGENT_SYSTEM_PROMPT, ...state.messages])]
-        }))
-        .addNode("tools", new ToolNode(allTools))
-        .addEdge(START, "agent")
-        .addConditionalEdges("agent", (state: typeof AgentState.State) => {
-            const lastMessage = state.messages.at(-1) as AIMessage;
-            if (!lastMessage?.tool_calls?.length) return END;
-            return "tools";
-        })
+  // 3. Definir Aristas
+  workflow.addEdge(START, "supervisor");
 
-        .addEdge("tools", "agent");
+  // Supervisor decide a dónde ir
+  workflow.addConditionalEdges("supervisor", (state) => {
+    const next = state.next?.toLowerCase();
+    // Si el supervisor alucina o devuelve algo raro, END.
+    if (!next || next.includes("finish") || !["holded_agent", "analytics_agent", "FINISH"].includes(next)) {
+        return END;
+    }
+    return next;
+  });
 
-    return workflow.compile({ checkpointer });
+  // Lógica de salida de Holded Agent
+  workflow.addConditionalEdges("holded_agent", (state) => {
+    const lastMessage = state.messages.at(-1) as AIMessage;
+    if (lastMessage?.tool_calls?.length > 0) return "holded_tools";
+
+    return END;
+  });
+
+  // Lógica de salida de Analytics Agent
+  workflow.addConditionalEdges("analytics_agent", (state) => {
+    const lastMessage = state.messages.at(-1) as AIMessage;
+    if (lastMessage?.tool_calls?.length > 0) return "analytics_tools";
+
+    return END;
+  });
+
+  // Retorno de herramientas a sus agentes
+  workflow.addEdge("holded_tools", "holded_agent");
+  workflow.addEdge("analytics_tools", "analytics_agent");
+
+  // 4. Compilar sin interrupciones (aprobación verbal en prompts)
+  return workflow.compile({ checkpointer });
 }

@@ -167,6 +167,11 @@ server.get("/history/:threadId", async (request, reply) => {
     const history = state.values?.messages || [];
     
     const formattedHistory = history
+      .filter((m: any) => {
+        // FILTRO PREVIO: Solo procesar mensajes Human y AI
+        const type = m._getType();
+        return type === "human" || type === "ai";
+      })
       .map((m: any) => {
         const role = m._getType() === "human" ? "user" : "assistant";
         let content = "";
@@ -177,7 +182,7 @@ server.get("/history/:threadId", async (request, reply) => {
             .filter((block: any) => block.type === "text")
             .map((block: any) => block.text)
             .join("\n");
-        } 
+        }
         // 2. Manejar contenido tipo String
         else if (typeof m.content === "string") {
           content = m.content;
@@ -194,11 +199,13 @@ server.get("/history/:threadId", async (request, reply) => {
        * Eliminamos mensajes que:
        * - Estén vacíos (mensajes que solo eran tool_calls sin texto).
        * - Sean respuestas crudas de la API (JSON de Holded que empieza por [ o {).
+       * - Contengan solo datos técnicos de herramientas.
        */
       .filter((m: any) => {
         const isNotEmpty = m.content !== "";
         const isNotRawJson = !m.content.startsWith("[{") && !m.content.startsWith('{"');
-        return isNotEmpty && isNotRawJson;
+        const isNotToolData = !m.content.includes("tool_use_id") && !m.content.includes("tool_result");
+        return isNotEmpty && isNotRawJson && isNotToolData;
       });
 
     return formattedHistory;
@@ -216,7 +223,7 @@ server.delete("/history/:threadId", async (request, reply) => {
     const agent = await createAgent(holdedKey);
     const config = { configurable: { thread_id: threadId } };
 
-    await agent.updateState(config, { messages: [] }, "agent");
+    await agent.updateState(config, { messages: [] });
 
     return { status: "success", message: "Historial reseteado" };
   } catch (error) {

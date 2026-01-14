@@ -7,8 +7,13 @@ import * as pathModule from 'path';
  * Función que genera la herramienta inyectando la API Key dinámicamente.
  * Esto permite que el agente funcione para cualquier usuario que envíe su clave.
  */
-export const createHoldedTool = (apiKey: string) => tool(
+export const createHoldedTool = (apiKey: string, toolOptions?: { readOnly?: boolean }) => tool(
   async ({ method, path, data, filePath }) => {
+    // Si está en modo readOnly, bloquear operaciones de escritura
+    if (toolOptions?.readOnly && !["GET"].includes(method.toUpperCase())) {
+      return "Error: El agente analista solo tiene acceso de LECTURA. Para realizar operaciones de creación, actualización o borrado, solicita al 'holded_agent' que lo haga.";
+    }
+
     // Usamos la apiKey pasada por parámetro en lugar de process.env
     const url = `https://api.holded.com/api/${path.replace(/^\//, "")}`;
 
