@@ -10,14 +10,9 @@ const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 horas en ms
 
 /**
  * Tool multistep que busca documentación de la API de Holded y extrae el formato correcto
- * Usa Playwright para renderizar páginas dinámicas + caché en memoria
+ * Usa fetch simple con parámetros ?dereference=true&reduce=false para obtener schema OpenAPI
  */
-export function createGetApiDocsTool(
-  braveSearchTool: any,
-  browserNavigate: any,
-  browserEvaluate: any,
-  browserClose: any
-) {
+export function createGetApiDocsTool(braveSearchTool: any) {
   return tool(
     async ({ searchQuery, errorMessage }) => {
       try {
@@ -74,91 +69,97 @@ NO añadas explicaciones, SOLO la URL.`;
 
         console.log(`📄 Documentación seleccionada: ${docUrl}`);
 
-        // PASO 3: Navegar con Playwright para renderizar contenido dinámico
-        console.log('🌐 Navegando con Playwright...');
-        console.log('🌐 URL a navegar:', docUrl);
+        // PASO 3: Transformar URL para obtener schema OpenAPI completo
+        // Brave devuelve: https://developers.holded.com/reference/create-document-1
+        // Necesitamos: https://developers.holded.com/holded/api-next/v2/branches/1.0/reference/create-document-1?dereference=true&reduce=false
+        const transformedUrl = docUrl.replace(
+          '/reference/',
+          '/holded/api-next/v2/branches/1.0/reference/'
+        );
+        const apiUrl = transformedUrl.includes('?')
+          ? `${transformedUrl}&dereference=true&reduce=false`
+          : `${transformedUrl}?dereference=true&reduce=false`;
 
-        const navResult = await browserNavigate.execute({ url: docUrl });
-        console.log('🌐 Navegación exitosa');
-        console.log('🌐 Resultado (primeros 300 chars):', JSON.stringify(navResult).substring(0, 300));
+        console.log('🌐 URL original:', docUrl);
+        console.log('🌐 URL transformada:', apiUrl);
 
-        // Esperar a que cargue el contenido (ReadMe.io es React)
-        await new Promise(resolve => setTimeout(resolve, 3000));
-
-        // PASO 4: Extraer el texto completo del body con JavaScript
-        console.log('📝 Ejecutando JavaScript en la página...');
-        const evaluateResult = await browserEvaluate.execute({
-          function: "() => document.body.innerText"
+        // PASO 4: Fetch simple con headers de navegador
+        const response = await fetch(apiUrl, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'application/json',
+            'Accept-Language': 'en-US,en;q=0.9'
+          }
         });
-
-        console.log('📦 Tipo de resultado:', typeof evaluateResult);
-        console.log('📦 Es array:', Array.isArray(evaluateResult));
-
-        // Playwright MCP devuelve [{ type: "text", text: "### Result\n<contenido>" }]
-        let pageContent = '';
-        if (Array.isArray(evaluateResult) && evaluateResult[0]?.text) {
-          const fullText = evaluateResult[0].text;
-          console.log('📄 Texto completo (primeros 500 chars):', fullText.substring(0, 500));
-          console.log('📄 Contiene "POST":', fullText.includes('POST'));
-          console.log('📄 Contiene "contactName":', fullText.includes('contactName'));
-          console.log('📄 Contiene "items":', fullText.includes('items'));
-
-          // Extraer solo el contenido después de "### Result\n"
-          const resultMatch = fullText.match(/### Result\n([\s\S]*)/);
-          pageContent = resultMatch ? resultMatch[1] : fullText;
-        } else if (typeof evaluateResult === 'string') {
-          pageContent = evaluateResult;
-        } else {
-          pageContent = JSON.stringify(evaluateResult);
+        if (!response.ok) {
+          return JSON.stringify({
+            success: false,
+            error: `Error HTTP ${response.status} al obtener documentación`
+          });
         }
 
-        // Cerrar navegador para liberar memoria
-        await browserClose.execute({});
+        const jsonData = await response.json();
 
-        console.log(`✅ Contenido renderizado capturado: ${pageContent.length} caracteres`);
+        // Extraer info del endpoint específico
+        const method = jsonData.data?.api?.method?.toLowerCase();
+        const path = jsonData.data?.api?.path;
+        const schema = jsonData.data?.api?.schema;
 
-        // PASO 5: Extraer formato con LLM
-        const extractionPrompt = `Analiza esta documentación de la API de Holded y extrae:
+        if (!method || !path || !schema?.paths) {
+          return JSON.stringify({
+            success: false,
+            error: "Schema OpenAPI incompleto o formato inesperado"
+          });
+        }
 
-1. CAMPOS OBLIGATORIOS con sus tipos
-2. CAMPOS OPCIONALES con sus tipos
-3. EJEMPLO JSON COMPLETO y CORRECTO del request body
-4. NOTAS IMPORTANTES sobre el formato
+        console.log(`✅ Schema obtenido: ${method.toUpperCase()} ${path}`);
 
-Búsqueda original: ${searchQuery}
-${errorMessage ? `Error recibido de la API: ${errorMessage}` : ""}
+        // PASO 5: Extraer el endpoint del schema
+        const endpointData = schema.paths[path]?.[method];
+        if (!endpointData) {
+          return JSON.stringify({
+            success: false,
+            error: `No se encontró ${method.toUpperCase()} ${path} en el schema`
+          });
+        }
 
-Contenido de la página (renderizado con navegador):
-${pageContent.substring(0, 20000)}
+        // Extraer requestBody schema y examples
+        const requestSchema = endpointData.requestBody?.content?.['application/json']?.schema;
+        const requestExample = endpointData.requestBody?.content?.['application/json']?.['x-examples'];
+        const responseSchema = endpointData.responses?.['200']?.content?.['application/json']?.schema ||
+                               endpointData.responses?.['201']?.content?.['application/json']?.schema;
 
-Responde SOLO con JSON en este formato:
-{
-  "operation": "${searchQuery}",
-  "method": "POST/GET/PUT/DELETE",
-  "requiredFields": {
-    "fieldName": "tipo y descripción"
-  },
-  "optionalFields": {
-    "fieldName": "tipo y descripción"
-  },
-  "exampleRequest": {
-    // ejemplo JSON completo
-  },
-  "notes": ["nota importante 1", "nota importante 2"]
-}`;
+        // PASO 6: Formatear respuesta para el agente
+        const formattedResponse = {
+          operation: searchQuery,
+          method: method.toUpperCase(),
+          path: path,
+          description: endpointData.description || endpointData.summary || "",
+          requestSchema: requestSchema,
+          requestExample: requestExample,
+          responseSchema: responseSchema,
+          notes: []
+        };
 
-        const extraction = await llm.invoke(extractionPrompt);
-        const extractedContent = typeof extraction.content === 'string'
-          ? extraction.content
-          : JSON.stringify(extraction.content);
+        // Extraer campos requeridos
+        if (requestSchema?.required) {
+          formattedResponse.notes.push(`Campos obligatorios: ${requestSchema.required.join(', ')}`);
+        }
 
-        // Limpiar respuesta (quitar markdown si existe)
-        const jsonMatch = extractedContent.match(/\{[\s\S]*\}/);
-        const cleanJson = jsonMatch ? jsonMatch[0] : extractedContent;
+        // Agregar notas importantes del content.body si existen
+        const contentBody = jsonData.data?.content?.body;
+        if (contentBody) {
+          formattedResponse.notes.push(`Notas de la documentación: ${contentBody.substring(0, 500)}`);
+        }
+
+        const cleanJson = JSON.stringify(formattedResponse, null, 2);
 
         console.log("✅ Documentación extraída correctamente");
+        console.log("📋 Resultado (primeros 2000 chars):");
+        console.log(cleanJson);
+        console.log({ formattedResponse })
 
-        // PASO 6: Guardar en caché
+        // PASO 7: Guardar en caché
         docCache.set(cacheKey, {
           result: cleanJson,
           timestamp: Date.now()
@@ -193,11 +194,14 @@ Ejemplos de búsquedas válidas:
 - "documentos de venta invoice"
 - "contacts API create"
 
-Esta herramienta hace 4 pasos automáticamente:
+Esta herramienta hace 7 pasos automáticamente:
 1. Busca en developers.holded.com con tu descripción
 2. Usa LLM para elegir la documentación más relevante
-3. Descarga la página completa
-4. Extrae campos obligatorios, tipos y ejemplo JSON correcto`,
+3. Obtiene el schema OpenAPI completo de la página
+4. Extrae el endpoint específico del schema
+5. Analiza requestBody, responseBody y ejemplos
+6. Formatea la información en JSON estructurado
+7. Cachea el resultado por 24h`,
       schema: z.object({
         searchQuery: z.string().describe("Descripción de lo que necesitas hacer o endpoint aproximado (ej: 'invoicing v1 POST purchases', 'crear productos', 'documents purchase')"),
         errorMessage: z.string().optional().describe("Mensaje de error recibido de la API (opcional, ayuda a entender qué salió mal)")
