@@ -14,7 +14,16 @@ import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js"
 export async function getBrowserTools() {
   const transport = new StdioClientTransport({
     command: "npx",
-    args: ["-y", "@playwright/mcp@latest"],
+    args: [
+      "-y",
+      "@playwright/mcp@latest",
+      "--headless",
+      "--isolated"
+    ],
+    env: {
+      ...process.env,
+      PLAYWRIGHT_BROWSERS_PATH: "/root/.cache/ms-playwright"
+    }
   });
 
   const client = new Client({

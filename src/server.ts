@@ -95,12 +95,15 @@ server.post("/chat", async (request, reply) => {
         } else {
           // Es un campo de texto
           body[part.fieldname] = (part as any).value;
+          console.log(`📝 Campo recibido: ${part.fieldname} = ${(part as any).value}`);
         }
       }
     } else {
       // JSON normal
       body = request.body as any;
     }
+
+    console.log(`📦 Body completo:`, body);
 
     // Validar request
     validateChatRequest(body);
