@@ -1,0 +1,14 @@
+{
+  "name": "holded-agent-browser-service",
+  "version": "1.0.0",
+  "description": "Servicio de navegador con Playwright para renderizar páginas SPA",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "playwright": "^1.49.1"
+  }
+}
