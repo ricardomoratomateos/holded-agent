@@ -1,10 +1,10 @@
-import { ChatAnthropic } from "@langchain/anthropic";
+import { ChatOpenAI } from "@langchain/openai";
 import { ANALYTICS_AGENT_PROMPT } from "../prompts/analytics.js";
 import { AgentState } from "../state.js";
 
 export function createAnalyticsAgentNode(tools: any[]) {
-  const model = new ChatAnthropic({
-    modelName: "claude-haiku-4-5",
+  const model = new ChatOpenAI({
+    modelName: "gpt-4o-mini",
     temperature: 0,
   }).bindTools(tools);
 

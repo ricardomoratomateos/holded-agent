@@ -42,14 +42,13 @@ Analiza los títulos, descripciones y URLs, y elige la URL MÁS RELEVANTE para: 
 Resultados de búsqueda:
 ${JSON.stringify(searchResult, null, 2)}
 
-IMPORTANTE:
-- Si buscan crear/registrar purchases/compras, elige "Create Document" (explica cómo crear documentos tipo purchase)
-- Si buscan crear productos, elige "Create Product"
-- Si buscan crear contactos, elige "Create Contact"
-- Prioriza URLs que expliquen cómo CREAR/MODIFICAR el recurso que necesitan
-- Si hay múltiples opciones, elige la más específica para la operación buscada
+IMPORTANTE - Distingue la operación:
+- Si la query incluye "GET" o "list" o "listar" o "filtrar" → elige endpoints de LISTADO (ej: "List Documents", "Get Contacts")
+- Si la query incluye "POST" o "create" o "crear" → elige endpoints de CREACIÓN (ej: "Create Document", "Create Contact")
+- Si la query incluye "PUT" o "update" o "actualizar" → elige endpoints de ACTUALIZACIÓN
+- Si la query incluye "DELETE" o "borrar" o "eliminar" → elige endpoints de BORRADO
 
-Responde SOLO con la URL completa de developers.holded.com (ejemplo: https://developers.holded.com/reference/create-document-1)
+Responde SOLO con la URL completa de developers.holded.com (ejemplo: https://developers.holded.com/reference/list-documents)
 NO añadas explicaciones, SOLO la URL.`;
 
         const urlSelection = await llm.invoke(selectionPrompt);
@@ -123,27 +122,57 @@ NO añadas explicaciones, SOLO la URL.`;
           });
         }
 
-        // Extraer requestBody schema y examples
+        // Extraer requestBody schema y examples (para POST/PUT)
         const requestSchema = endpointData.requestBody?.content?.['application/json']?.schema;
         const requestExample = endpointData.requestBody?.content?.['application/json']?.['x-examples'];
         const responseSchema = endpointData.responses?.['200']?.content?.['application/json']?.schema ||
                                endpointData.responses?.['201']?.content?.['application/json']?.schema;
 
+        // Extraer query parameters (para GET)
+        const queryParams = endpointData.parameters?.filter((p: any) => p.in === 'query') || [];
+        const pathParams = endpointData.parameters?.filter((p: any) => p.in === 'path') || [];
+
         // PASO 6: Formatear respuesta para el agente
-        const formattedResponse = {
+        const formattedResponse: any = {
           operation: searchQuery,
           method: method.toUpperCase(),
           path: path,
           description: endpointData.description || endpointData.summary || "",
-          requestSchema: requestSchema,
-          requestExample: requestExample,
-          responseSchema: responseSchema,
           notes: []
         };
 
+        // Incluir params según el método
+        if (queryParams.length > 0) {
+          formattedResponse.queryParameters = queryParams.map((p: any) => ({
+            name: p.name,
+            type: p.schema?.type || 'string',
+            required: p.required || false,
+            description: p.description || ''
+          }));
+        }
+
+        if (pathParams.length > 0) {
+          formattedResponse.pathParameters = pathParams.map((p: any) => ({
+            name: p.name,
+            type: p.schema?.type || 'string',
+            required: p.required || false,
+            description: p.description || ''
+          }));
+        }
+
+        if (requestSchema) {
+          formattedResponse.requestSchema = requestSchema;
+        }
+        if (requestExample) {
+          formattedResponse.requestExample = requestExample;
+        }
+        if (responseSchema) {
+          formattedResponse.responseSchema = responseSchema;
+        }
+
         // Extraer campos requeridos
         if (requestSchema?.required) {
-          formattedResponse.notes.push(`Campos obligatorios: ${requestSchema.required.join(', ')}`);
+          formattedResponse.notes.push(`Campos obligatorios en body: ${requestSchema.required.join(', ')}`);
         }
 
         // Agregar notas importantes del content.body si existen
@@ -187,12 +216,12 @@ Usa esta herramienta cuando:
 
 NO necesitas saber el endpoint exacto, solo describe QUÉ quieres hacer.
 
-Ejemplos de búsquedas válidas:
-- "invoicing v1 POST purchases" (crear compras)
-- "crear documentos purchase"
-- "POST products" (crear productos)
-- "documentos de venta invoice"
-- "contacts API create"
+IMPORTANTE: Incluye siempre el método HTTP (GET/POST/PUT/DELETE):
+- "GET list documents invoice" → query params para filtrar facturas
+- "GET list contacts" → params para listar contactos
+- "POST create document purchase" → body para crear compra
+- "POST create product" → body para crear producto
+- "PUT update contact" → body para actualizar contacto
 
 Esta herramienta hace 7 pasos automáticamente:
 1. Busca en developers.holded.com con tu descripción

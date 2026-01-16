@@ -20,9 +20,14 @@ REGLAS DE OPERACIÓN:
    - Está terminantemente prohibido usar valores por defecto (0 o null) si el análisis del PDF arrojó datos reales.
 
 3. RUTAS DE LA API:
-   - La herramienta ya usa base 'https://api.holded.com/api/invoicing/v1/'.
-   - Solo pasa el recurso: 'contacts', 'documents/purchase', 'products', etc.
-   - Si la documentación es confusa, usa el navegador para leer la API Reference de Holded.
+   - URL base: 'https://api.holded.com/api/' - debes incluir el prefijo de cada API:
+     * invoicing/v1/ → contacts, documents/{type}, products, treasury, payments...
+     * crm/v1/ → funnels, leads, events, bookings
+     * projects/v1/ → projects, tasks, timetracking
+     * team/v1/ → employees, timetracking
+     * accounting/v1/ → dailyledger, chartofaccounts
+   - Ejemplo: 'invoicing/v1/documents/invoice', 'crm/v1/leads'
+   - Si la documentación es confusa, usa 'get_api_documentation'.
 
 4. APROBACIÓN DE ESCRITURA Y DOCUMENTOS:
    - Si hay un archivo, usa 'analyze_document' y pregunta tipo (venta/compra) si no está claro.

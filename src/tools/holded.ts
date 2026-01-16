@@ -15,7 +15,7 @@ export const createHoldedTool = (apiKey: string, toolOptions?: { readOnly?: bool
     }
 
     // Usamos la apiKey pasada por parámetro en lugar de process.env
-    const url = `https://api.holded.com/api/invoicing/v1/${path.replace(/^\//, "")}`;
+    const url = `https://api.holded.com/api/${path.replace(/^\//, "")}`;
 
     let options: RequestInit;
 
@@ -75,10 +75,15 @@ export const createHoldedTool = (apiKey: string, toolOptions?: { readOnly?: bool
   },
   {
     name: "call_holded_api",
-    description: "Ejecuta una petición a la API de Holded (Invoicing v1). Ejemplos de path: 'contacts', 'documents/invoice', 'products'.",
+    description: `Ejecuta una petición a la API de Holded. APIs disponibles:
+- invoicing/v1/ → contacts, documents/{type}, products, treasury, payments, warehouses, saleschannels, expensesaccounts, numberseries, taxes, services
+- crm/v1/ → funnels, leads, events, bookings
+- projects/v1/ → projects, tasks, timetracking
+- team/v1/ → employees, timetracking
+- accounting/v1/ → dailyledger, chartofaccounts`,
     schema: z.object({
       method: z.enum(["GET", "POST", "PUT", "DELETE"]),
-      path: z.string().describe("Path del endpoint (sin prefijos). Ej: 'contacts', 'documents/purchase', 'products/{id}'"),
+      path: z.string().describe("Path completo con prefijo de API. Ej: 'invoicing/v1/contacts', 'crm/v1/leads', 'projects/v1/tasks'"),
       data: z.any().optional().describe("Objeto JSON con los datos para POST/PUT"),
       filePath: z.string().optional().describe("Ruta local al archivo para adjuntar (para endpoints que aceptan archivos)"),
     }),

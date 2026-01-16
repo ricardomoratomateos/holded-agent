@@ -63,7 +63,11 @@ export async function createAgent(holdedApiKey: string) {
   ];
   console.log('🛠️  Tools del holded_agent:', holdedAgentTools.map(t => t.name));
 
-  const analyticsAgentTools = [holdedToolReadOnly, ...commonTools];
+  const analyticsAgentTools = [
+    holdedToolReadOnly,
+    ...(apiDocsTool ? [apiDocsTool] : []),
+    ...commonTools
+  ];
 
   // 2. Crear Grafo
   const workflow = new StateGraph(AgentState)
