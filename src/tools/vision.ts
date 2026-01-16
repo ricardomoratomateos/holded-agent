@@ -43,7 +43,6 @@ async function retryWithBackoff<T>(
       lastError = error;
       if (attempt < maxRetries - 1) {
         const delay = baseDelay * Math.pow(2, attempt);
-        console.log(`⚠️ Intento ${attempt + 1} falló, reintentando en ${delay}ms...`);
         await new Promise(resolve => setTimeout(resolve, delay));
       }
     }
@@ -124,7 +123,6 @@ RESPONDE SOLO CON EL ARRAY JSON, SIN TEXTO ADICIONAL.`;
     const isRefusal = refusalPatterns.some(pattern => pattern.test(content));
 
     if (isRefusal && content.length < 200 && !content.includes('[')) {
-      console.error('❌ El modelo se negó a procesar:', content);
       throw new VisionExtractionError(
         'El modelo se negó a procesar la imagen',
         { response: content }
@@ -147,13 +145,11 @@ RESPONDE SOLO CON EL ARRAY JSON, SIN TEXTO ADICIONAL.`;
         const parsed = JSON.parse(jsonString);
 
         if (!Array.isArray(parsed)) {
-          console.warn('⚠️ Se esperaba array pero se recibió objeto, envolviéndolo en array');
           extracted = [parsed];
         } else {
           extracted = parsed;
         }
       } catch (error) {
-        console.error('❌ Error parseando array JSON:', jsonString.substring(0, 100));
         throw new VisionExtractionError('JSON array inválido', { jsonString, error });
       }
     }
@@ -163,15 +159,12 @@ RESPONDE SOLO CON EL ARRAY JSON, SIN TEXTO ADICIONAL.`;
       try {
         const parsed = JSON.parse(jsonString);
         extracted = [parsed];
-        console.log('ℹ️ GPT devolvió objeto único, convertido a array');
       } catch (error) {
-        console.error('❌ Error parseando objeto JSON:', jsonString.substring(0, 100));
         throw new VisionExtractionError('JSON object inválido', { jsonString, error });
       }
     }
     // ERROR: No se encontró JSON
     else {
-      console.error('❌ No se encontró JSON válido en la respuesta:', content.substring(0, 200));
       throw new VisionExtractionError(
         'No se encontró JSON en la respuesta del modelo',
         { response: content }
@@ -202,7 +195,6 @@ RESPONDE SOLO CON EL ARRAY JSON, SIN TEXTO ADICIONAL.`;
 
     // Validar campos obligatorios
     if (!expense.merchant || !expense.amount || !expense.date || !expense.category) {
-      console.error(`❌ Gasto ${index + 1} con campos faltantes:`, expense);
       throw new VisionValidationError(
         `Faltan campos obligatorios en el gasto ${index + 1}`,
         { expense, index }
@@ -229,7 +221,6 @@ RESPONDE SOLO CON EL ARRAY JSON, SIN TEXTO ADICIONAL.`;
     return expense;
   });
 
-  console.log(`✅ Extraídos y validados ${cleaned.length} gasto(s)`);
   return cleaned;
 }
 
@@ -239,8 +230,6 @@ RESPONDE SOLO CON EL ARRAY JSON, SIN TEXTO ADICIONAL.`;
 export const analyzeDocumentTool = tool(
   async ({ documentPath }) => {
     try {
-      console.log(`📸 Analizando documento: ${documentPath}`);
-
       // Leer el archivo
       const buffer = fs.readFileSync(documentPath);
       const isPDF = documentPath.toLowerCase().endsWith('.pdf');
@@ -250,7 +239,6 @@ export const analyzeDocumentTool = tool(
       if (isPDF) {
         // Convertir PDF a imágenes
         images = await convertPdfToImages(buffer);
-        console.log(`📄 PDF convertido en ${images.length} página(s)`);
       } else {
         // Es una imagen, convertir a base64
         const mimeType = documentPath.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg';
@@ -272,7 +260,6 @@ export const analyzeDocumentTool = tool(
       });
 
     } catch (error) {
-      console.error('❌ Error analizando documento:', error);
       return JSON.stringify({
         success: false,
         error: error instanceof Error ? error.message : 'Error desconocido'

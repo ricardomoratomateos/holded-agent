@@ -16,13 +16,10 @@ export function createGetApiDocsTool(braveSearchTool: any) {
   return tool(
     async ({ searchQuery, errorMessage }) => {
       try {
-        console.log(`📚 Buscando documentación para: ${searchQuery}`);
-
         // PASO 0: Verificar caché
         const cacheKey = searchQuery.toLowerCase().trim();
         const cached = docCache.get(cacheKey);
         if (cached && (Date.now() - cached.timestamp) < CACHE_TTL) {
-          console.log('✅ Documentación encontrada en caché');
           return cached.result;
         }
 
@@ -66,8 +63,6 @@ NO añadas explicaciones, SOLO la URL.`;
           });
         }
 
-        console.log(`📄 Documentación seleccionada: ${docUrl}`);
-
         // PASO 3: Transformar URL para obtener schema OpenAPI completo
         // Brave devuelve: https://developers.holded.com/reference/create-document-1
         // Necesitamos: https://developers.holded.com/holded/api-next/v2/branches/1.0/reference/create-document-1?dereference=true&reduce=false
@@ -78,9 +73,6 @@ NO añadas explicaciones, SOLO la URL.`;
         const apiUrl = transformedUrl.includes('?')
           ? `${transformedUrl}&dereference=true&reduce=false`
           : `${transformedUrl}?dereference=true&reduce=false`;
-
-        console.log('🌐 URL original:', docUrl);
-        console.log('🌐 URL transformada:', apiUrl);
 
         // PASO 4: Fetch simple con headers de navegador
         const response = await fetch(apiUrl, {
@@ -110,8 +102,6 @@ NO añadas explicaciones, SOLO la URL.`;
             error: "Schema OpenAPI incompleto o formato inesperado"
           });
         }
-
-        console.log(`✅ Schema obtenido: ${method.toUpperCase()} ${path}`);
 
         // PASO 5: Extraer el endpoint del schema
         const endpointData = schema.paths[path]?.[method];
@@ -183,22 +173,15 @@ NO añadas explicaciones, SOLO la URL.`;
 
         const cleanJson = JSON.stringify(formattedResponse, null, 2);
 
-        console.log("✅ Documentación extraída correctamente");
-        console.log("📋 Resultado (primeros 2000 chars):");
-        console.log(cleanJson);
-        console.log({ formattedResponse })
-
         // PASO 7: Guardar en caché
         docCache.set(cacheKey, {
           result: cleanJson,
           timestamp: Date.now()
         });
-        console.log(`💾 Documentación guardada en caché (${docCache.size} entries)`);
 
         return cleanJson;
 
       } catch (error: any) {
-        console.error("❌ Error en get_api_documentation:", error);
         return JSON.stringify({
           success: false,
           error: error.message || "Error desconocido al buscar documentación"

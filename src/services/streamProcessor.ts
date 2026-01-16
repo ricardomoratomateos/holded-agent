@@ -8,11 +8,6 @@ export class StreamProcessor {
     for await (const [msg, metadata] of stream) {
       const textContent = this.extractTextContent(msg);
 
-      // Log para debug: ver todas las tool calls
-      if ((msg as any).tool_calls?.length > 0) {
-        console.log('🔧 Tool calls:', (msg as any).tool_calls.map((tc: any) => tc.name));
-      }
-
       // Solo enviamos si hay texto
       // Excluimos explícitamente el supervisor si llegara a emitir algo técnico, 
       // pero permitimos cualquier otro nodo que genere contenido para el usuario.

@@ -54,8 +54,6 @@ server.post("/chat/upload", async (request, reply) => {
 
     fs.writeFileSync(filepath, buffer);
 
-    console.log(`📎 Archivo subido: ${filepath}`);
-
     return { success: true, documentPath: filepath };
   } catch (error) {
     server.log.error(error);
@@ -90,20 +88,15 @@ server.post("/chat", async (request, reply) => {
 
           fs.writeFileSync(filepath, buffer);
           documentPath = filepath;
-
-          console.log(`📎 Archivo guardado: ${filepath}`);
         } else {
           // Es un campo de texto
           body[part.fieldname] = (part as any).value;
-          console.log(`📝 Campo recibido: ${part.fieldname} = ${(part as any).value}`);
         }
       }
     } else {
       // JSON normal
       body = request.body as any;
     }
-
-    console.log(`📦 Body completo:`, body);
 
     // Validar request
     validateChatRequest(body);

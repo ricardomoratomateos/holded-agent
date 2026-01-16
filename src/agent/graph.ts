@@ -43,16 +43,10 @@ export async function createAgent(holdedApiKey: string) {
   }));
 
   // Crear tool de documentación (solo necesita brave_search para buscar, luego usa fetch)
-  console.log('🔍 MCP Tools disponibles:', mcpRawTools.map(t => t.name));
-  console.log('🌐 Browser Tools disponibles:', browserRawTools.map(t => t.name));
-
   const braveSearchTool = mcpRawTools.find(t => t.name === 'brave_web_search');
-  console.log('📚 brave_web_search encontrado:', !!braveSearchTool);
-
   const apiDocsTool = braveSearchTool
     ? createGetApiDocsTool(braveSearchTool)
     : null;
-  console.log('✅ get_api_documentation creada:', !!apiDocsTool);
 
   const commonTools = [...formattedMcpTools, ...formattedBrowserTools];
   const holdedAgentTools = [
@@ -61,7 +55,6 @@ export async function createAgent(holdedApiKey: string) {
     ...(apiDocsTool ? [apiDocsTool] : []),
     ...commonTools
   ];
-  console.log('🛠️  Tools del holded_agent:', holdedAgentTools.map(t => t.name));
 
   const analyticsAgentTools = [
     holdedToolReadOnly,

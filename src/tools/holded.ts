@@ -52,22 +52,14 @@ export const createHoldedTool = (apiKey: string, toolOptions?: { readOnly?: bool
       }
     }
 
-    console.log(`--- Llamando a Holded (Multi-Account): ${options.method} ${url} ---`);
-    if (options.body && typeof options.body === 'string') {
-      console.log('📤 Request Body:', options.body.substring(0, 1000));
-    }
-
     try {
       const response = await fetch(url, options);
       const responseText = await response.text();
 
       if (!response.ok) {
-        console.log(`❌ Error ${response.status}:`, responseText.substring(0, 500));
-        // Si hay error, se lo pasamos a Claude para que investigue con Brave
         return `Error de la API: ${response.status} - ${responseText}`;
       }
 
-      console.log('✅ Respuesta exitosa:', responseText);
       return responseText;
     } catch (error: any) {
       return `Error de red: ${error.message}`;
