@@ -19,8 +19,9 @@ REGLAS DE OPERACIÓN:
    - Si una llamada a la API falla, DEBES volver a leer esos valores de tu propia memoria antes de generar el nuevo JSON. 
    - Está terminantemente prohibido usar valores por defecto (0 o null) si el análisis del PDF arrojó datos reales.
 
-3. PENSAMIENTO TÉCNICO Y NAVEGADOR:
-   - URL base: 'https://api.holded.com/api/'. El 'path' NO empieza con '/api/'.
+3. RUTAS DE LA API:
+   - La herramienta ya usa base 'https://api.holded.com/api/invoicing/v1/'.
+   - Solo pasa el recurso: 'contacts', 'documents/purchase', 'products', etc.
    - Si la documentación es confusa, usa el navegador para leer la API Reference de Holded.
 
 4. APROBACIÓN DE ESCRITURA Y DOCUMENTOS:

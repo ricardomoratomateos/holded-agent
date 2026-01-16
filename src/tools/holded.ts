@@ -15,7 +15,7 @@ export const createHoldedTool = (apiKey: string, toolOptions?: { readOnly?: bool
     }
 
     // Usamos la apiKey pasada por parámetro en lugar de process.env
-    const url = `https://api.holded.com/api/${path.replace(/^\//, "")}`;
+    const url = `https://api.holded.com/api/invoicing/v1/${path.replace(/^\//, "")}`;
 
     let options: RequestInit;
 
@@ -53,27 +53,32 @@ export const createHoldedTool = (apiKey: string, toolOptions?: { readOnly?: bool
     }
 
     console.log(`--- Llamando a Holded (Multi-Account): ${options.method} ${url} ---`);
+    if (options.body && typeof options.body === 'string') {
+      console.log('📤 Request Body:', options.body.substring(0, 1000));
+    }
 
     try {
       const response = await fetch(url, options);
+      const responseText = await response.text();
 
       if (!response.ok) {
-        const errorData = await response.text();
+        console.log(`❌ Error ${response.status}:`, responseText.substring(0, 500));
         // Si hay error, se lo pasamos a Claude para que investigue con Brave
-        return `Error de la API: ${response.status} - ${errorData}`;
+        return `Error de la API: ${response.status} - ${responseText}`;
       }
 
-      return JSON.stringify(await response.json());
+      console.log('✅ Respuesta exitosa:', responseText);
+      return responseText;
     } catch (error: any) {
       return `Error de red: ${error.message}`;
     }
   },
   {
     name: "call_holded_api",
-    description: "Ejecuta una petición técnica a la API de Holded. IMPORTANTE: El path no debe empezar por 'api/'. Ejemplo: 'invoicing/v1/contacts'.",
+    description: "Ejecuta una petición a la API de Holded (Invoicing v1). Ejemplos de path: 'contacts', 'documents/invoice', 'products'.",
     schema: z.object({
       method: z.enum(["GET", "POST", "PUT", "DELETE"]),
-      path: z.string().describe("El path del endpoint sin el prefijo /api/"),
+      path: z.string().describe("Path del endpoint (sin prefijos). Ej: 'contacts', 'documents/purchase', 'products/{id}'"),
       data: z.any().optional().describe("Objeto JSON con los datos para POST/PUT"),
       filePath: z.string().optional().describe("Ruta local al archivo para adjuntar (para endpoints que aceptan archivos)"),
     }),
