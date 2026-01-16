@@ -14,7 +14,7 @@ import remarkGfm from "remark-gfm";
 
 export const Thread: FC = () => {
   return (
-    <ThreadPrimitive.Root className="flex h-full flex-col bg-gray-50">
+    <ThreadPrimitive.Root className="flex h-full flex-col bg-gray-900">
       <ThreadPrimitive.Viewport className="flex-1 overflow-y-auto px-4 py-4">
         <ThreadPrimitive.Empty>
           <ThreadWelcome />
@@ -32,7 +32,7 @@ export const Thread: FC = () => {
         <div className="h-24" />
       </ThreadPrimitive.Viewport>
 
-      <div className="sticky bottom-0 bg-gray-50 border-t border-gray-200 p-4">
+      <div className="sticky bottom-0 bg-gray-900 border-t border-gray-700 p-4">
         <div className="max-w-4xl mx-auto">
           <ThreadScrollToBottom />
           <Composer />
@@ -45,13 +45,13 @@ export const Thread: FC = () => {
 const ThreadWelcome: FC = () => {
   return (
     <div className="flex flex-col items-center justify-center py-12 text-center">
-      <h2 className="text-2xl font-bold text-gray-800 mb-2">
+      <h2 className="text-2xl font-bold text-gray-100 mb-2">
         Asistente de Holded
       </h2>
-      <p className="text-gray-600 mb-4">
+      <p className="text-gray-300 mb-4">
         Tu agente investigador y gestor de Holded
       </p>
-      <div className="text-sm text-gray-600 max-w-md space-y-1.5 text-left">
+      <div className="text-sm text-gray-300 max-w-md space-y-1.5 text-left">
         <p>✅ Consultar datos - Contactos, facturas, documentos</p>
         <p>✅ Crear y modificar - Facturas, presupuestos, pedidos</p>
         <p>✅ Analizar imágenes y PDFs - Facturas, recibos, cualquier documento</p>
@@ -64,7 +64,7 @@ const ThreadWelcome: FC = () => {
 const ThreadScrollToBottom: FC = () => {
   return (
     <ThreadPrimitive.ScrollToBottom asChild>
-      <button className="absolute -top-12 left-1/2 -translate-x-1/2 rounded-full bg-white p-3 shadow-md hover:bg-gray-100 disabled:hidden">
+      <button className="absolute -top-12 left-1/2 -translate-x-1/2 rounded-full bg-gray-800 p-3 shadow-md hover:bg-gray-700 disabled:hidden">
         <ArrowDownIcon className="size-4" />
       </button>
     </ThreadPrimitive.ScrollToBottom>
@@ -109,7 +109,7 @@ const AttachmentList: FC = () => {
   return (
     <div className="mb-2 flex flex-wrap gap-2">
       {attachments.map((attachment: any, index: number) => (
-        <div key={attachment.id || index} className="relative inline-flex items-center gap-2 px-3 py-2 bg-white rounded-lg border border-gray-300 shadow-sm group">
+        <div key={attachment.id || index} className="relative inline-flex items-center gap-2 px-3 py-2 bg-gray-800 rounded-lg border border-gray-600 shadow-sm group">
           {attachment.type === "image" && attachment.content?.[0]?.type === "image" ? (
             <img
               src={attachment.content[0].image}
@@ -119,7 +119,7 @@ const AttachmentList: FC = () => {
           ) : (
             <div className="flex items-center gap-2">
               <Paperclip size={18} className="text-blue-600" />
-              <span className="text-sm font-medium text-gray-700">{attachment.name || "Archivo"}</span>
+              <span className="text-sm font-medium text-gray-200">{attachment.name || "Archivo"}</span>
             </div>
           )}
           <button
@@ -147,7 +147,7 @@ const Composer: FC = () => {
         <ComposerPrimitive.AddAttachment asChild>
           <button
             type="button"
-            className="absolute left-3 text-gray-500 hover:text-gray-700 transition-colors z-10"
+            className="absolute left-3 text-gray-400 hover:text-gray-200 transition-colors z-10"
             title="Adjuntar archivo"
           >
             <Paperclip size={20} />
@@ -156,7 +156,7 @@ const Composer: FC = () => {
 
         <ComposerPrimitive.Input
           placeholder="Escribe un mensaje..."
-          className="w-full bg-white border border-gray-300 rounded-2xl py-4 pl-12 pr-14 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none max-h-32"
+          className="w-full bg-gray-800 border border-gray-600 rounded-2xl py-4 pl-12 pr-14 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none max-h-32 text-gray-100 placeholder-gray-400"
           rows={1}
           autoFocus
         />
@@ -193,18 +193,18 @@ const Composer: FC = () => {
 const AssistantMessage: FC = () => {
   return (
     <MessagePrimitive.Root className="flex justify-start mb-3">
-      <div className="max-w-2xl bg-white rounded-2xl px-5 py-3 shadow-sm border border-gray-200">
+      <div className="max-w-2xl bg-gray-800 rounded-2xl px-5 py-3 shadow-sm border border-gray-700">
         {/* Mostrar indicador de loading mientras está corriendo */}
         <ThreadPrimitive.If running>
           <MessagePrimitive.If empty>
-            <div className="flex items-center gap-2 text-gray-500">
+            <div className="flex items-center gap-2 text-gray-400">
               <div className="animate-pulse">⏳</div>
               <span className="text-sm">Pensando...</span>
             </div>
           </MessagePrimitive.If>
         </ThreadPrimitive.If>
 
-        <div className="prose prose-sm max-w-none prose-p:my-2 prose-p:leading-relaxed">
+        <div className="prose prose-sm prose-invert max-w-none prose-p:my-2 prose-p:leading-relaxed">
           <MessagePrimitive.Content
             components={{
               Text: (props: any) => (
@@ -217,7 +217,7 @@ const AssistantMessage: FC = () => {
         </div>
 
         <ThreadPrimitive.If running={false}>
-          <div className="mt-3 pt-2 border-t border-gray-100 flex gap-2 items-center">
+          <div className="mt-3 pt-2 border-t border-gray-700 flex gap-2 items-center">
             <BranchPicker />
             <AssistantActionBar />
           </div>
@@ -235,7 +235,7 @@ const AssistantActionBar: FC = () => {
       className="flex gap-1 ml-auto"
     >
       <ActionBarPrimitive.Copy asChild>
-        <button className="p-1.5 hover:bg-gray-100 rounded text-gray-600 hover:text-gray-900 transition-colors" title="Copiar">
+        <button className="p-1.5 hover:bg-gray-700 rounded text-gray-300 hover:text-gray-100 transition-colors" title="Copiar">
           <MessagePrimitive.If copied>
             <CheckIcon className="size-4 text-green-600" />
           </MessagePrimitive.If>
@@ -246,7 +246,7 @@ const AssistantActionBar: FC = () => {
       </ActionBarPrimitive.Copy>
 
       <ActionBarPrimitive.Reload asChild>
-        <button className="p-1.5 hover:bg-gray-100 rounded text-gray-600 hover:text-gray-900 transition-colors" title="Regenerar">
+        <button className="p-1.5 hover:bg-gray-700 rounded text-gray-300 hover:text-gray-100 transition-colors" title="Regenerar">
           <RefreshCwIcon className="size-4" />
         </button>
       </ActionBarPrimitive.Reload>
@@ -274,10 +274,10 @@ const BranchPicker: FC = () => {
   return (
     <BranchPickerPrimitive.Root
       hideWhenSingleBranch
-      className="inline-flex items-center text-xs text-gray-500 gap-1"
+      className="inline-flex items-center text-xs text-gray-400 gap-1"
     >
       <BranchPickerPrimitive.Previous asChild>
-        <button className="p-1 hover:bg-gray-100 rounded transition-colors" title="Anterior">
+        <button className="p-1 hover:bg-gray-700 rounded transition-colors" title="Anterior">
           <span className="text-sm">&larr;</span>
         </button>
       </BranchPickerPrimitive.Previous>
@@ -285,7 +285,7 @@ const BranchPicker: FC = () => {
         <BranchPickerPrimitive.Number /> / <BranchPickerPrimitive.Count />
       </span>
       <BranchPickerPrimitive.Next asChild>
-        <button className="p-1 hover:bg-gray-100 rounded transition-colors" title="Siguiente">
+        <button className="p-1 hover:bg-gray-700 rounded transition-colors" title="Siguiente">
           <span className="text-sm">&rarr;</span>
         </button>
       </BranchPickerPrimitive.Next>

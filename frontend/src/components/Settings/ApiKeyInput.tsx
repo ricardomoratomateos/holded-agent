@@ -27,7 +27,7 @@ export const ApiKeyInput = ({ currentApiKey, onSave, onClear }: ApiKeyInputProps
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2 text-gray-700">
+      <div className="flex items-center gap-2 text-gray-300">
         <Key size={20} />
         <h3 className="font-medium">Holded API Key</h3>
       </div>
@@ -38,12 +38,12 @@ export const ApiKeyInput = ({ currentApiKey, onSave, onClear }: ApiKeyInputProps
           value={key}
           onChange={(e) => setKey(e.target.value)}
           placeholder="Ingresa tu API key de Holded..."
-          className="w-full border border-gray-300 rounded-lg px-4 py-2.5 pr-12 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+          className="w-full bg-gray-900 border border-gray-600 rounded-lg px-4 py-2.5 pr-12 text-gray-100 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
         />
         <button
           type="button"
           onClick={() => setShowKey(!showKey)}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200"
         >
           {showKey ? <EyeOff size={18} /> : <Eye size={18} />}
         </button>
@@ -62,14 +62,14 @@ export const ApiKeyInput = ({ currentApiKey, onSave, onClear }: ApiKeyInputProps
         {currentApiKey && (
           <button
             onClick={handleClear}
-            className="px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
+            className="px-4 py-2 bg-red-900/30 text-red-400 rounded-lg hover:bg-red-900/50 transition-colors"
           >
             <Trash2 size={18} />
           </button>
         )}
       </div>
 
-      <p className="text-xs text-gray-500">
+      <p className="text-xs text-gray-400">
         Tu API key se guarda localmente en tu navegador.
       </p>
     </div>

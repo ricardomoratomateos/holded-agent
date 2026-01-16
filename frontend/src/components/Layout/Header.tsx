@@ -24,7 +24,7 @@ export const Header = ({ onOpenSettings, onClearChat, hasApiKey }: HeaderProps) 
   };
 
   return (
-    <header className="bg-white border-b border-gray-200 shadow-sm">
+    <header className="bg-gray-800 border-b border-gray-700 shadow-sm">
       <div className="max-w-4xl mx-auto px-4">
         <div className="flex items-center justify-between h-14">
           <div className="flex items-center gap-2.5">
@@ -32,7 +32,7 @@ export const Header = ({ onOpenSettings, onClearChat, hasApiKey }: HeaderProps) 
               <Bot size={20} className="text-white" />
             </div>
             <div>
-              <h1 className="text-base font-semibold text-gray-800">Holded AI Agent</h1>
+              <h1 className="text-base font-semibold text-gray-100">Holded AI Agent</h1>
             </div>
           </div>
 
@@ -41,7 +41,7 @@ export const Header = ({ onOpenSettings, onClearChat, hasApiKey }: HeaderProps) 
             <button
               onClick={handleDeleteClick}
               disabled={isDeleting}
-              className="p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all disabled:opacity-50"
+              className="p-2 rounded-lg text-gray-400 hover:text-red-400 hover:bg-red-900/30 transition-all disabled:opacity-50"
               title="Borrar conversación"
             >
               {isDeleting ? (
@@ -54,12 +54,12 @@ export const Header = ({ onOpenSettings, onClearChat, hasApiKey }: HeaderProps) 
             {/* Botón de Configuración */}
             <button
               onClick={onOpenSettings}
-              className="relative p-2 rounded-lg hover:bg-gray-100 transition-colors"
+              className="relative p-2 rounded-lg hover:bg-gray-700 transition-colors"
               title="Configuración"
             >
-              <Settings size={18} className="text-gray-600" />
+              <Settings size={18} className="text-gray-400" />
               {!hasApiKey && (
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-gray-800"></span>
               )}
             </button>
           </div>
