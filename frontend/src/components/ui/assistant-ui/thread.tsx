@@ -194,15 +194,15 @@ const AssistantMessage: FC = () => {
   return (
     <MessagePrimitive.Root className="flex justify-start mb-3">
       <div className="max-w-2xl bg-gray-800 rounded-2xl px-5 py-3 shadow-sm border border-gray-700">
-        {/* Mostrar indicador de loading mientras está corriendo */}
-        <ThreadPrimitive.If running>
-          <MessagePrimitive.If empty>
+        {/* Mostrar indicador de loading solo en el mensaje que está siendo generado */}
+        <MessagePrimitive.If streaming>
+          <MessagePrimitive.If hasContent={false}>
             <div className="flex items-center gap-2 text-gray-400">
               <div className="animate-pulse">⏳</div>
               <span className="text-sm">Pensando...</span>
             </div>
           </MessagePrimitive.If>
-        </ThreadPrimitive.If>
+        </MessagePrimitive.If>
 
         <div className="prose prose-sm prose-invert max-w-none prose-p:my-2 prose-p:leading-relaxed">
           <MessagePrimitive.Content
@@ -216,12 +216,10 @@ const AssistantMessage: FC = () => {
           />
         </div>
 
-        <ThreadPrimitive.If running={false}>
-          <div className="mt-3 pt-2 border-t border-gray-700 flex gap-2 items-center">
-            <BranchPicker />
-            <AssistantActionBar />
-          </div>
-        </ThreadPrimitive.If>
+        <div className="mt-3 pt-2 border-t border-gray-700 flex gap-2 items-center">
+          <BranchPicker />
+          <AssistantActionBar />
+        </div>
       </div>
     </MessagePrimitive.Root>
   );
@@ -230,8 +228,6 @@ const AssistantMessage: FC = () => {
 const AssistantActionBar: FC = () => {
   return (
     <ActionBarPrimitive.Root
-      hideWhenRunning
-      autohide="not-last"
       className="flex gap-1 ml-auto"
     >
       <ActionBarPrimitive.Copy asChild>
