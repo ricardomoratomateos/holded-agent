@@ -194,24 +194,24 @@ const AssistantMessage: FC = () => {
   return (
     <MessagePrimitive.Root className="flex justify-start mb-3">
       <div className="max-w-2xl bg-gray-800 rounded-2xl px-5 py-3 shadow-sm border border-gray-700">
-        {/* Mostrar indicador de loading solo en el mensaje que está siendo generado */}
-        <MessagePrimitive.If streaming>
-          <MessagePrimitive.If hasContent={false}>
-            <div className="flex items-center gap-2 text-gray-400">
-              <div className="animate-pulse">⏳</div>
-              <span className="text-sm">Pensando...</span>
-            </div>
-          </MessagePrimitive.If>
-        </MessagePrimitive.If>
-
         <div className="prose prose-sm prose-invert max-w-none prose-p:my-2 prose-p:leading-relaxed">
           <MessagePrimitive.Content
             components={{
-              Text: (props: any) => (
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                  {props.text || ""}
-                </ReactMarkdown>
-              ),
+              Text: ({ text }: { text: string }) => {
+                if (!text || text === "⏳ Procesando...") {
+                  return (
+                    <div className="flex items-center gap-2 text-gray-400 not-prose">
+                      <div className="animate-pulse">⏳</div>
+                      <span className="text-sm">Pensando...</span>
+                    </div>
+                  );
+                }
+                return (
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {text}
+                  </ReactMarkdown>
+                );
+              },
             }}
           />
         </div>
