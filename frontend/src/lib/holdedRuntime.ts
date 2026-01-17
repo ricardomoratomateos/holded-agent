@@ -123,16 +123,19 @@ export function createHoldedAdapter({ apiKey, threadId }: HoldedRuntimeOptions):
                 if (data.final) {
                   hasReceivedContent = true;
 
+                  // Si viene contenido con el estado final (ej: mensaje de error), usarlo
+                  const finalText = data.content || accumulatedText || "Sin respuesta";
+
                   const finalStatus: ChatModelRunResult["status"] =
                     data.status === "pending_approval" ? { type: "requires-action", reason: "interrupt" } :
-                    data.status === "error" ? { type: "incomplete", reason: "error" as const, error: data.error || "Unknown error" } :
+                    data.status === "error" ? { type: "incomplete", reason: "error" as const, error: data.content || data.error || "Unknown error" } :
                     { type: "complete" as const, reason: "stop" as const };
 
                   yield {
                     content: [
                       {
                         type: "text" as const,
-                        text: accumulatedText || "Sin respuesta",
+                        text: finalText,
                       },
                     ],
                     status: finalStatus,
