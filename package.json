@@ -8,7 +8,7 @@
     "dev:watch": "tsx watch --env-file=.env src/server.ts",
     "dev:docker": "tsx watch src/server.ts",
     "build": "tsc",
-    "start": "node --env-file=.env dist/server.js",
+    "start": "node dist/server.js",
     "clean": "rm -rf dist checkpoints.sqlite",
     "test:agent": "tsx --env-file=.env test-agent.ts",
     "docker:up": "docker-compose up --build",
