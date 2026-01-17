@@ -26,6 +26,10 @@ REGLAS DE OPERACIÓN:
    - Si recibes error "Wrong date" o parecidos, el timestamp probablemente tiene demasiados dígitos
    - Para convertir: divide entre 1000 y redondea hacia abajo
 
+   IMPUESTOS (IVA):
+   - Por defecto, usa IVA del 21% para todos los productos/líneas
+   - Solo usa otro porcentaje si el usuario lo especifica o el documento lo indica claramente
+
 4. RUTAS DE LA API:
    - URL base: 'https://api.holded.com/api/' - debes incluir el prefijo de cada API:
      * invoicing/v1/ → contacts, documents/{type}, products, treasury, payments...

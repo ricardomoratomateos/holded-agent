@@ -7,8 +7,8 @@ import {
   useComposer,
   useThreadRuntime,
 } from "@assistant-ui/react";
-import { CheckIcon, CopyIcon, RefreshCwIcon, ArrowUpIcon, ArrowDownIcon, Square, Paperclip, X } from "lucide-react";
-import type { FC } from "react";
+import { CheckIcon, CopyIcon, RefreshCwIcon, ArrowUpIcon, ArrowDownIcon, Square, Paperclip, X, BarChart3, Search, Zap } from "lucide-react";
+import { type FC, useRef } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
@@ -35,6 +35,7 @@ export const Thread: FC = () => {
       <div className="sticky bottom-0 bg-[#212121] px-4 pb-4">
         <div className="max-w-screen-md mx-auto w-full">
           <ThreadScrollToBottom />
+          <QuickActions />
           <Composer />
         </div>
       </div>
@@ -68,6 +69,77 @@ const ThreadScrollToBottom: FC = () => {
         <ArrowDownIcon className="size-4 text-[#eee]" />
       </button>
     </ThreadPrimitive.ScrollToBottom>
+  );
+};
+
+const QuickActions: FC = () => {
+  const runtime = useThreadRuntime();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const sendMessage = (text: string) => {
+    runtime.append({
+      role: "user",
+      content: [{ type: "text", text }],
+    });
+  };
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const composer = (runtime as any).composer;
+      if (composer?.addAttachment) {
+        await composer.addAttachment(file);
+        // Enviar mensaje automáticamente después de adjuntar
+        setTimeout(() => {
+          composer.setText("Analiza esta compra y créala en Holded");
+          composer.send();
+        }, 100);
+      }
+    }
+    // Reset input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const quickActions = [
+    {
+      icon: BarChart3,
+      label: "Resumen de ventas este mes",
+      action: () => sendMessage("Dame un resumen de las ventas de este mes"),
+    },
+    {
+      icon: Search,
+      label: "Buscar facturas pendientes",
+      action: () => sendMessage("Busca las facturas pendientes de cobro"),
+    },
+    {
+      icon: Zap,
+      label: "Analizar compra y crear",
+      action: () => fileInputRef.current?.click(),
+    },
+  ];
+
+  return (
+    <div className="flex flex-wrap gap-2 mb-3 justify-center">
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileSelect}
+        accept="image/*,.pdf"
+        className="hidden"
+      />
+      {quickActions.map((action, index) => (
+        <button
+          key={index}
+          onClick={action.action}
+          className="flex items-center gap-2 px-3 py-2 text-sm text-[#cdcdcd] bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-colors"
+        >
+          <action.icon size={16} />
+          <span>{action.label}</span>
+        </button>
+      ))}
+    </div>
   );
 };
 
