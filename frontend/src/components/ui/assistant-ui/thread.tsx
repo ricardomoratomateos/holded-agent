@@ -7,8 +7,8 @@ import {
   useComposer,
   useThreadRuntime,
 } from "@assistant-ui/react";
-import { CheckIcon, CopyIcon, RefreshCwIcon, ArrowUpIcon, ArrowDownIcon, Square, Paperclip, X, BarChart3, Search, Zap, Loader2 } from "lucide-react";
-import { type FC, useRef } from "react";
+import { CheckIcon, CopyIcon, RefreshCwIcon, ArrowUpIcon, ArrowDownIcon, Square, Paperclip, X, BarChart3, Search, Zap, Loader2, FileText, Mic, MicOff } from "lucide-react";
+import { type FC, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
@@ -210,10 +210,79 @@ const AttachmentList: FC = () => {
   );
 };
 
+const MESSAGE_TEMPLATES = [
+  { label: "Resumen de ventas de este mes", text: "Dame un resumen de las ventas de este mes" },
+  { label: "Facturas pendientes de cobro", text: "¿Cuáles son las facturas pendientes de cobro?" },
+  { label: "Top 10 clientes", text: "¿Cuáles son mis 10 mejores clientes por facturación?" },
+  { label: "Gastos del mes", text: "Dame un resumen de los gastos de este mes" },
+  { label: "Crear factura", text: "Crea una factura para [cliente] por [cantidad]€" },
+  { label: "Buscar contacto", text: "Busca el contacto [nombre]" },
+];
+
 const Composer: FC = () => {
+  const runtime = useThreadRuntime();
+  const [showTemplates, setShowTemplates] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+
+  const handleTemplateClick = (text: string) => {
+    const composer = (runtime as any).composer;
+    if (composer?.setText) {
+      composer.setText(text);
+    }
+    setShowTemplates(false);
+  };
+
+  const handleVoiceInput = () => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      alert("Tu navegador no soporta reconocimiento de voz");
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = "es-ES";
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    recognition.onstart = () => setIsListening(true);
+    recognition.onend = () => setIsListening(false);
+    recognition.onerror = () => setIsListening(false);
+
+    recognition.onresult = (event: any) => {
+      const text = event.results[0][0].transcript;
+      const composer = (runtime as any).composer;
+      if (composer?.setText) {
+        composer.setText(text);
+      }
+    };
+
+    recognition.start();
+  };
+
   return (
     <ComposerPrimitive.Root className="relative flex w-full flex-col rounded-2xl bg-[#303030] border border-white/10">
       <AttachmentPreview />
+
+      {/* Dropdown de plantillas */}
+      {showTemplates && (
+        <div className="absolute bottom-full left-0 mb-2 w-full bg-[#303030] border border-white/10 rounded-xl shadow-lg overflow-hidden z-10">
+          <div className="p-2 border-b border-white/10">
+            <span className="text-xs text-[#b4b4b4]">Plantillas</span>
+          </div>
+          <div className="max-h-48 overflow-y-auto">
+            {MESSAGE_TEMPLATES.map((template, index) => (
+              <button
+                key={index}
+                onClick={() => handleTemplateClick(template.text)}
+                className="w-full text-left px-3 py-2 text-sm text-[#cdcdcd] hover:bg-white/10 transition-colors"
+              >
+                {template.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="relative w-full flex items-center px-3 py-2">
         <ComposerPrimitive.AddAttachment asChild>
@@ -225,6 +294,24 @@ const Composer: FC = () => {
             <Paperclip size={20} />
           </button>
         </ComposerPrimitive.AddAttachment>
+
+        <button
+          type="button"
+          onClick={() => setShowTemplates(!showTemplates)}
+          className="text-[#b4b4b4] hover:text-[#eee] transition-colors p-1"
+          title="Plantillas"
+        >
+          <FileText size={20} />
+        </button>
+
+        <button
+          type="button"
+          onClick={handleVoiceInput}
+          className={`transition-colors p-1 ${isListening ? "text-red-500 animate-pulse" : "text-[#b4b4b4] hover:text-[#eee]"}`}
+          title={isListening ? "Escuchando..." : "Entrada de voz"}
+        >
+          {isListening ? <MicOff size={20} /> : <Mic size={20} />}
+        </button>
 
         <ComposerPrimitive.Input
           placeholder="Escribe un mensaje..."
