@@ -7,7 +7,7 @@ import {
   useComposer,
   useThreadRuntime,
 } from "@assistant-ui/react";
-import { CheckIcon, CopyIcon, RefreshCwIcon, ArrowUpIcon, ArrowDownIcon, Square, Paperclip, X, BarChart3, Search, Zap } from "lucide-react";
+import { CheckIcon, CopyIcon, RefreshCwIcon, ArrowUpIcon, ArrowDownIcon, Square, Paperclip, X, BarChart3, Search, Zap, Loader2 } from "lucide-react";
 import { type FC, useRef } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -267,14 +267,27 @@ const AssistantMessage: FC = () => {
           <MessagePrimitive.Content
             components={{
               Text: ({ text }: { text: string }) => {
+                // Estado inicial de "pensando"
                 if (!text || text === "⏳ Procesando...") {
                   return (
                     <div className="flex items-center gap-2 text-[#b4b4b4]">
-                      <div className="animate-pulse">⏳</div>
+                      <Loader2 size={16} className="animate-spin" />
                       <span className="text-sm">Pensando...</span>
                     </div>
                   );
                 }
+
+                // Steps del agente (mismo estilo que "pensando")
+                if (text.startsWith("__STEP__")) {
+                  const stepText = text.replace("__STEP__", "");
+                  return (
+                    <div className="flex items-center gap-2 text-[#b4b4b4]">
+                      <Loader2 size={16} className="animate-spin" />
+                      <span className="text-sm">{stepText}</span>
+                    </div>
+                  );
+                }
+
                 return (
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>
                     {text}

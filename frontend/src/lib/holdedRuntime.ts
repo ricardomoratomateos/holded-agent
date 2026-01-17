@@ -104,6 +104,18 @@ export function createHoldedAdapter({ apiKey, threadId }: HoldedRuntimeOptions):
               try {
                 const data = JSON.parse(line.replace("data: ", ""));
 
+                // Capturar steps (pasos del agente) - mostrar solo el actual
+                if (data.type === "step" && data.step) {
+                  yield {
+                    content: [
+                      {
+                        type: "text" as const,
+                        text: `__STEP__${data.step}`,
+                      },
+                    ],
+                  } satisfies ChatModelRunResult;
+                }
+
                 // Acumular texto mientras streaming
                 if (data.content && data.status === "streaming") {
                   hasReceivedContent = true;

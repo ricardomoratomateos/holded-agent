@@ -1,17 +1,38 @@
 import { SSEWriter } from "../utils/sseWriter.js";
 
+// Mapeo de herramientas a mensajes amigables
+const TOOL_FRIENDLY_NAMES: Record<string, string> = {
+  call_holded_api: "Llamando a Holded...",
+  analyze_document: "Analizando documento...",
+  brave_web_search: "Buscando información...",
+  get_api_documentation: "Consultando documentación...",
+  browser_navigate: "Navegando...",
+  browser_snapshot: "Capturando página...",
+};
+
 /**
  * StreamProcessor - Procesa el stream de LangGraph y envía chunks por SSE
  */
 export class StreamProcessor {
   async processStream(stream: any, writer: SSEWriter): Promise<void> {
     for await (const [msg, metadata] of stream) {
+      const nodeName = (metadata as any).langgraph_node || "";
+
+      // Detectar llamadas a herramientas y enviar step
+      if (msg.tool_calls && msg.tool_calls.length > 0) {
+        for (const toolCall of msg.tool_calls) {
+          const friendlyName = TOOL_FRIENDLY_NAMES[toolCall.name] || `Procesando...`;
+          writer.write({
+            type: "step",
+            step: friendlyName,
+            status: "streaming"
+          });
+        }
+      }
+
       const textContent = this.extractTextContent(msg);
 
       // Solo enviamos si hay texto
-      // Excluimos explícitamente el supervisor si llegara a emitir algo técnico, 
-      // pero permitimos cualquier otro nodo que genere contenido para el usuario.
-      const nodeName = (metadata as any).langgraph_node || "";
       const isInternalNode = nodeName === "supervisor" || nodeName.includes("tools");
 
       if (textContent && !isInternalNode) {
