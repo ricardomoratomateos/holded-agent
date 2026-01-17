@@ -18,10 +18,19 @@ if (!fs.existsSync(uploadsDir)) {
 
 // Habilitar CORS para conectar con React
 await server.register(cors, {
-  origin: true,
+  origin: (origin, cb) => {
+    // Permitir requests sin origin (como curl o mobile apps)
+    if (!origin) return cb(null, true);
+    // Permitir cualquier origen en desarrollo y producción
+    cb(null, true);
+  },
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-  credentials: true
+  allowedHeaders: ["Content-Type", "Authorization", "Accept", "Origin", "X-Requested-With"],
+  exposedHeaders: ["Content-Type"],
+  credentials: true,
+  preflight: true,
+  preflightContinue: false,
+  optionsSuccessStatus: 204
 });
 
 // Habilitar soporte para multipart/form-data (file uploads)
