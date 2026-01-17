@@ -45,19 +45,66 @@ export const Thread: FC = () => {
 };
 
 const ThreadWelcome: FC = () => {
+  const runtime = useThreadRuntime();
+
+  const sendMessage = (text: string) => {
+    runtime.append({
+      role: "user",
+      content: [{ type: "text", text }],
+    });
+  };
+
+  const dashboardCards = [
+    {
+      icon: "📊",
+      title: "Ventas del mes",
+      subtitle: "Ver resumen con gráfico",
+      action: () => sendMessage("Dame un resumen de las ventas de este mes con gráfico"),
+    },
+    {
+      icon: "📋",
+      title: "Facturas pendientes",
+      subtitle: "Consultar deudas",
+      action: () => sendMessage("¿Cuáles son las facturas pendientes de cobro?"),
+    },
+    {
+      icon: "👥",
+      title: "Top clientes",
+      subtitle: "Mejores clientes",
+      action: () => sendMessage("¿Cuáles son mis 10 mejores clientes por facturación? Muéstralo con gráfico"),
+    },
+  ];
+
   return (
-    <div className="flex flex-col items-center justify-center py-16 text-center px-4">
-      <h2 className="text-2xl font-semibold text-[#eee] mb-3">
+    <div className="flex flex-col items-center justify-center py-12 text-center px-4">
+      <h2 className="text-2xl font-semibold text-[#eee] mb-2">
         Asistente de Holded
       </h2>
-      <p className="text-[#b4b4b4] mb-6">
+      <p className="text-[#b4b4b4] mb-8">
         Tu agente investigador y gestor de Holded
       </p>
-      <div className="text-sm text-[#cdcdcd] max-w-md space-y-2 text-left">
-        <p>✅ Consultar datos - Contactos, facturas, documentos</p>
-        <p>✅ Crear y modificar - Facturas, presupuestos, pedidos</p>
-        <p>✅ Analizar imágenes y PDFs - Facturas, recibos, cualquier documento</p>
-        <p>✅ Buscar información - Documentación técnica y guías de Holded</p>
+
+      {/* Dashboard Cards */}
+      <div className="grid grid-cols-3 gap-3 mb-8 w-full max-w-lg">
+        {dashboardCards.map((card, index) => (
+          <button
+            key={index}
+            onClick={card.action}
+            className="flex flex-col items-center p-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-all hover:scale-105"
+          >
+            <span className="text-2xl mb-2">{card.icon}</span>
+            <span className="text-sm font-medium text-[#eee]">{card.title}</span>
+            <span className="text-xs text-[#b4b4b4]">{card.subtitle}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Capacidades */}
+      <div className="text-sm text-[#cdcdcd] max-w-md space-y-1.5 text-left">
+        <p className="text-xs text-[#888] uppercase tracking-wide mb-2">También puedes:</p>
+        <p>📄 Crear facturas, presupuestos y pedidos</p>
+        <p>🔍 Analizar imágenes y PDFs de facturas</p>
+        <p>❓ Preguntar sobre la documentación de Holded</p>
       </div>
     </div>
   );
