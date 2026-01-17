@@ -36,7 +36,7 @@ function App() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-gray-900">
+    <div className="flex flex-col h-screen bg-[#212121]">
       <Header
         onOpenSettings={() => setSettingsOpen(true)}
         onClearChat={clearChat}
@@ -50,12 +50,12 @@ function App() {
       ) : (
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
-            <p className="text-gray-400 mb-4">
+            <p className="text-[#b4b4b4] mb-4">
               Configura tu API key para comenzar
             </p>
             <button
               onClick={() => setSettingsOpen(true)}
-              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
+              className="bg-white text-black px-6 py-2 rounded-xl hover:bg-white/90 font-medium transition-colors"
             >
               Abrir Configuración
             </button>
@@ -75,15 +75,15 @@ function App() {
       />
 
       {!isConfigured && !settingsOpen && (
-        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-40">
-          <div className="bg-gray-800 rounded-2xl p-6 shadow-2xl max-w-md mx-4">
-            <h2 className="text-xl font-semibold mb-3">API Key Requerida</h2>
-            <p className="text-gray-300 mb-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-40">
+          <div className="bg-[#2a2a2a] rounded-2xl p-6 shadow-2xl max-w-md mx-4 border border-white/10">
+            <h2 className="text-xl font-semibold mb-3 text-[#eee]">API Key Requerida</h2>
+            <p className="text-[#cdcdcd] mb-4">
               Por favor configura tu API key de Holded para usar el chat.
             </p>
             <button
               onClick={() => setSettingsOpen(true)}
-              className="w-full bg-blue-600 text-white py-2.5 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+              className="w-full bg-white text-black py-2.5 rounded-xl hover:bg-white/90 transition-colors font-medium"
             >
               Abrir Configuración
             </button>

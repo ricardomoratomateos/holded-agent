@@ -19,13 +19,13 @@ export const SettingsModal = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full">
-        <div className="flex items-center justify-between p-6 border-b border-gray-700">
-          <h2 className="text-xl font-semibold text-gray-100">Configuración</h2>
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+      <div className="bg-[#2a2a2a] rounded-2xl shadow-2xl max-w-md w-full border border-white/10">
+        <div className="flex items-center justify-between p-6 border-b border-white/10">
+          <h2 className="text-xl font-semibold text-[#eee]">Configuración</h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-200 transition-colors"
+            className="text-[#b4b4b4] hover:text-[#eee] transition-colors"
           >
             <X size={24} />
           </button>
@@ -39,10 +39,10 @@ export const SettingsModal = ({
           />
         </div>
 
-        <div className="p-6 border-t border-gray-700 bg-gray-900 rounded-b-2xl">
+        <div className="p-6 border-t border-white/10 bg-[#212121] rounded-b-2xl">
           <button
             onClick={onClose}
-            className="w-full bg-blue-600 text-white py-2.5 rounded-xl hover:bg-blue-700 transition-colors font-medium"
+            className="w-full bg-white text-black py-2.5 rounded-xl hover:bg-white/90 transition-colors font-medium"
           >
             Cerrar
           </button>

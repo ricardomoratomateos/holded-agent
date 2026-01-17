@@ -1,5 +1,6 @@
-import { Bot, Settings, Trash2, Loader2 } from 'lucide-react';
+import { Settings, Trash2, Loader2 } from 'lucide-react';
 import { useState } from 'react';
+import { Logo } from './Logo';
 
 interface HeaderProps {
   onOpenSettings: () => void;
@@ -24,15 +25,13 @@ export const Header = ({ onOpenSettings, onClearChat, hasApiKey }: HeaderProps) 
   };
 
   return (
-    <header className="bg-gray-800 border-b border-gray-700 shadow-sm">
-      <div className="max-w-4xl mx-auto px-4">
+    <header className="bg-[#212121] border-b border-white/10">
+      <div className="max-w-screen-md mx-auto px-4">
         <div className="flex items-center justify-between h-14">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-sm">
-              <Bot size={20} className="text-white" />
-            </div>
+            <Logo size={36} />
             <div>
-              <h1 className="text-base font-semibold text-gray-100">Holded AI Agent</h1>
+              <h1 className="text-base font-semibold text-[#eee]">Holded AI Agent</h1>
             </div>
           </div>
 
@@ -41,7 +40,7 @@ export const Header = ({ onOpenSettings, onClearChat, hasApiKey }: HeaderProps) 
             <button
               onClick={handleDeleteClick}
               disabled={isDeleting}
-              className="p-2 rounded-lg text-gray-400 hover:text-red-400 hover:bg-red-900/30 transition-all disabled:opacity-50"
+              className="p-2 rounded-lg text-[#b4b4b4] hover:text-red-400 hover:bg-white/5 transition-all disabled:opacity-50"
               title="Borrar conversación"
             >
               {isDeleting ? (
@@ -54,12 +53,12 @@ export const Header = ({ onOpenSettings, onClearChat, hasApiKey }: HeaderProps) 
             {/* Botón de Configuración */}
             <button
               onClick={onOpenSettings}
-              className="relative p-2 rounded-lg hover:bg-gray-700 transition-colors"
+              className="relative p-2 rounded-lg hover:bg-white/5 transition-colors"
               title="Configuración"
             >
-              <Settings size={18} className="text-gray-400" />
+              <Settings size={18} className="text-[#b4b4b4]" />
               {!hasApiKey && (
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-gray-800"></span>
+                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-[#212121]"></span>
               )}
             </button>
           </div>
