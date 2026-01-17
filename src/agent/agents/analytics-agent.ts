@@ -15,8 +15,7 @@ export function createAnalyticsAgentNode(tools: any[]) {
     ]);
 
     return {
-      messages: [response],
-      next: "supervisor"
+      messages: [response]
     };
   };
 }

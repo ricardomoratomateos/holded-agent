@@ -15,8 +15,7 @@ export function createHoldedAgentNode(tools: any[]) {
     ]);
 
     return {
-      messages: [response],
-      next: "supervisor" // Después de actuar, volvemos al supervisor para decidir el siguiente paso
+      messages: [response]
     };
   };
 }
