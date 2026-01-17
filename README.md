@@ -1,220 +1,280 @@
 # Holded AI Agent
 
-Agente conversacional inteligente para interactuar con la API de Holded, permitiendo consultar y gestionar datos de tu cuenta mediante lenguaje natural.
+An intelligent conversational agent that lets you interact with the Holded API using natural language. Query data, analyze documents, create invoices, and get insights - all through a modern chat interface.
 
-## 🚀 Características
+![Demo](https://img.shields.io/badge/demo-live-brightgreen) ![License](https://img.shields.io/badge/license-MIT-blue) ![Node](https://img.shields.io/badge/node-18+-green)
 
-- **Chat inteligente** con streaming de respuestas en tiempo real
-- **Procesamiento de documentos**: Sube imágenes y PDFs de facturas para análisis automático
-- **Integración completa con Holded API**: Consulta contactos, facturas, productos y más
-- **Interfaz moderna** construida con React y assistant-ui
-- **Historial persistente** de conversaciones
-- **Aprobación manual** de operaciones sensibles (crear/modificar datos)
+## Features
 
-## 📋 Requisitos Previos
+### Chat Interface
+- **Real-time streaming** responses with step-by-step indicators
+- **Voice input** - speak your queries (Web Speech API)
+- **Message templates** - quick access to common queries
+- **Dark mode** - modern ChatGPT-style interface
+
+### Document Processing
+- **PDF & image analysis** - upload invoices and receipts
+- **Automatic data extraction** - merchant, amount, date, line items
+- **One-click creation** - analyze and create in Holded with approval
+
+### Data Visualization
+- **Interactive charts** - bar, line, and pie charts in responses
+- **Quick dashboard** - one-click access to key metrics
+- **Smart analytics** - trends, comparisons, and insights
+
+### Multi-Agent Architecture
+- **Supervisor agent** - routes queries to specialized agents
+- **Holded agent** - CRUD operations with approval workflow
+- **Analytics agent** - read-only queries with visualizations
+
+## Tech Stack
+
+**Backend:**
+- Fastify (HTTP server)
+- LangGraph (agent orchestration)
+- Claude Sonnet 3.5 (main LLM)
+- GPT-4o-mini (document vision)
+
+**Frontend:**
+- React 18 + TypeScript
+- Vite (build tool)
+- assistant-ui (chat primitives)
+- Tailwind CSS
+- Recharts (visualizations)
+
+## Quick Start
+
+### Prerequisites
 
 - Node.js 18+
-- npm o yarn
-- Cuenta de Holded con API key
-- API key de OpenAI o Anthropic
+- Docker (recommended)
+- Holded API key
+- Anthropic API key
+- OpenAI API key (for vision)
 
-## 🛠️ Instalación
-
-### Backend
+### Using Docker (Recommended)
 
 ```bash
+# Clone the repository
+git clone https://github.com/yourusername/holded-agent.git
 cd holded-agent
-npm install
-```
 
-Configura las variables de entorno creando un archivo `.env`:
+# Create .env file
+cp .env.example .env
+# Edit .env with your API keys
 
-```env
-OPENAI_API_KEY=tu_api_key_aqui
-ANTHROPIC_API_KEY=tu_api_key_anthropic (opcional)
-LANGCHAIN_API_KEY=tu_langchain_key (opcional, para trazas)
-```
-
-### Frontend
-
-```bash
-cd frontend
-npm install
-```
-
-Configura el archivo `.env` en el frontend:
-
-```env
-VITE_API_URL=http://localhost:3300
-```
-
-## 🚀 Ejecución
-
-### Opción 1: Docker (Recomendado)
-
-```bash
-# Levantar todos los servicios con hot reload
-npm run docker:up
-
-# Ver logs en tiempo real
-npm run docker:logs
-
-# Detener servicios
-npm run docker:down
-```
-
-O directamente con Docker Compose:
-
-```bash
+# Start all services
 docker-compose up
+
+# Access the app
+open http://localhost:3301
 ```
 
-**URLs:**
-- Frontend: http://localhost:3301
-- Backend: http://localhost:3300
-
-📖 **Ver [DOCKER.md](./DOCKER.md) para más información**
-
-### Opción 2: Desarrollo Local (sin Docker)
-
-#### Iniciar el Backend
+### Local Development
 
 ```bash
+# Backend
+npm install
 npm run dev
-```
 
-El servidor se iniciará en `http://localhost:3300`
-
-#### Iniciar el Frontend
-
-```bash
+# Frontend (new terminal)
 cd frontend
+npm install
 npm run dev
 ```
 
-La aplicación estará disponible en `http://localhost:5173`
+## Configuration
 
-## 📖 Uso
+### Environment Variables
 
-1. **Configuración inicial**: Al abrir la app, haz clic en el ícono de configuración (⚙️) y añade tu API key de Holded
+```env
+# Required
+ANTHROPIC_API_KEY=your_anthropic_key
+OPENAI_API_KEY=your_openai_key
 
-2. **Consultas básicas**:
-   - "Muéstrame mis últimos 5 contactos"
-   - "¿Cuántas facturas tengo pendientes de pago?"
-   - "Busca el contacto de nombre Juan Pérez"
+# Optional - LangSmith tracing
+LANGCHAIN_API_KEY=your_langsmith_key
+LANGCHAIN_TRACING_V2=true
+LANGCHAIN_PROJECT=holded-agent
+```
 
-3. **Subir documentos**:
-   - Haz clic en el botón de adjuntar (📎)
-   - Selecciona una imagen o PDF de factura
-   - El agente extraerá automáticamente los datos y te preguntará qué hacer
+### Holded API Key
 
-4. **Aprobar operaciones**:
-   - Cuando el agente quiera crear o modificar datos, te pedirá confirmación
-   - Revisa la información y aprueba o rechaza la operación
+Enter your Holded API key in the app settings (gear icon). Get your key from [Holded Developer Portal](https://developers.holded.com).
 
-## 🏗️ Arquitectura
+## Usage Examples
 
-### Backend
+### Basic Queries
+```
+"Show me this month's sales summary"
+"What invoices are pending payment?"
+"Find contact named Acme Corp"
+```
 
-- **Framework**: Fastify
-- **Agente**: LangGraph con Claude Sonnet 3.5
-- **Herramientas**:
-  - `call_holded_api`: Interacción con Holded API
-  - `analyze_document`: Análisis de facturas con GPT-4o-mini vision
-  - `brave_search`: Búsqueda web para documentación
-- **Estrategias de chat**:
-  - Streaming normal
-  - Interrupciones para aprobación
-  - Manejo de errores
+### With Charts
+```
+"Sales breakdown by client with chart"
+"Monthly revenue trend"
+"Top 10 customers by billing"
+```
 
-### Frontend
+### Document Analysis
+```
+[Attach invoice image/PDF]
+"Analyze this purchase and create it in Holded"
+```
 
-- **Framework**: React + TypeScript + Vite
-- **UI**: assistant-ui (chat interface)
-- **Estado**: LocalRuntime de assistant-ui
-- **Styling**: Tailwind CSS
-- **Características**:
-  - Streaming en tiempo real
-  - Upload de archivos con preview
-  - Indicadores de loading
-  - Gestión de historial
+### Operations (with approval)
+```
+"Create an invoice for Client X for €500"
+"Update contact email to new@email.com"
+```
 
-## 📁 Estructura del Proyecto
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                         Frontend                             │
+│  React + assistant-ui + Tailwind + Recharts                 │
+└─────────────────────┬───────────────────────────────────────┘
+                      │ SSE (Server-Sent Events)
+┌─────────────────────▼───────────────────────────────────────┐
+│                         Backend                              │
+│  Fastify + LangGraph                                        │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │                    Supervisor                         │   │
+│  │            (routes to specialized agents)             │   │
+│  └──────────┬────────────────────────┬──────────────────┘   │
+│             │                        │                       │
+│  ┌──────────▼──────────┐  ┌─────────▼─────────┐            │
+│  │   Holded Agent      │  │  Analytics Agent   │            │
+│  │   (CRUD + approval) │  │  (read-only)       │            │
+│  └──────────┬──────────┘  └─────────┬─────────┘            │
+│             │                        │                       │
+│  ┌──────────▼────────────────────────▼─────────┐            │
+│  │                   Tools                       │            │
+│  │  • call_holded_api  • analyze_document       │            │
+│  │  • brave_search     • get_api_documentation  │            │
+│  └──────────────────────────────────────────────┘            │
+└─────────────────────────────────────────────────────────────┘
+                      │
+                      ▼
+            ┌─────────────────┐
+            │   Holded API    │
+            └─────────────────┘
+```
+
+## Project Structure
 
 ```
 holded-agent/
 ├── src/
 │   ├── agent/
-│   │   ├── graph.ts          # LangGraph workflow
-│   │   └── prompts.ts        # System prompts
+│   │   ├── graph.ts              # LangGraph workflow
+│   │   ├── state.ts              # Agent state definition
+│   │   ├── agents/               # Specialized agents
+│   │   └── prompts/              # System prompts
 │   ├── strategies/
-│   │   └── chatStrategy.ts   # Estrategias de manejo de chat
+│   │   └── chatStrategy.ts       # Message handling strategies
+│   ├── services/
+│   │   └── streamProcessor.ts    # SSE stream processing
 │   ├── tools/
-│   │   ├── holded.ts         # Herramienta Holded API
-│   │   ├── vision.ts         # Análisis de documentos
-│   │   └── pdfProcessor.ts   # Procesamiento de PDFs
-│   ├── utils/
-│   │   └── sseWriter.ts      # Server-Sent Events
-│   └── server.ts             # Servidor Fastify
+│   │   ├── holded.ts             # Holded API wrapper
+│   │   ├── vision.ts             # Document analysis
+│   │   └── documentation.ts      # API docs fetcher
+│   └── server.ts                 # Fastify server
 ├── frontend/
 │   ├── src/
 │   │   ├── components/
 │   │   │   ├── ui/
-│   │   │   │   └── assistant-ui/  # Componentes de chat
-│   │   │   └── Layout/            # Header, Settings
-│   │   ├── lib/
-│   │   │   ├── holdedRuntime.ts   # Adapter SSE
-│   │   │   └── attachmentAdapter.ts # Upload de archivos
-│   │   └── App.tsx
-│   └── index.html
+│   │   │   │   ├── assistant-ui/ # Chat components
+│   │   │   │   └── Chart.tsx     # Chart renderer
+│   │   │   └── Layout/           # Header, Settings
+│   │   └── lib/
+│   │       ├── holdedRuntime.ts  # SSE adapter
+│   │       └── attachmentAdapter.ts
+│   └── package.json
+├── docker-compose.yml
 └── README.md
 ```
 
-## 🔧 Configuración Avanzada
+## API Reference
 
-### Variables de Entorno (Backend)
+### POST /chat
 
-- `OPENAI_API_KEY`: API key de OpenAI (obligatoria para vision)
-- `ANTHROPIC_API_KEY`: API key de Anthropic (obligatoria para Claude)
-- `LANGCHAIN_API_KEY`: Para trazabilidad con LangSmith
-- `LANGCHAIN_TRACING_V2`: Activar trazas (true/false)
-- `LANGCHAIN_PROJECT`: Nombre del proyecto en LangSmith
+Send a message to the agent.
 
-### Personalización del Agente
+**Request:**
+```json
+{
+  "message": "Show me pending invoices",
+  "threadId": "unique-thread-id",
+  "holdedKey": "your-holded-api-key"
+}
+```
 
-Edita `src/agent/prompts.ts` para modificar:
-- Instrucciones del sistema
-- Comportamiento del agente
-- Reglas de aprobación
+**Response:** Server-Sent Events stream
 
-## 🐛 Troubleshooting
+```
+data: {"content": "Looking up invoices...", "status": "streaming"}
+data: {"content": "Found 5 pending invoices...", "status": "streaming"}
+data: {"status": "success", "final": true}
+```
 
-### El agente no responde
-- Verifica que el backend esté corriendo en puerto 3300
-- Revisa que las API keys estén configuradas correctamente
-- Mira los logs del servidor para errores
+### POST /chat (with file)
 
-### Error de CORS
-- Asegúrate de que el frontend apunte a `http://localhost:3300`
-- Verifica que ambos servicios estén corriendo
+Send a message with an attachment (multipart/form-data).
 
-### Archivos no se suben
-- Tamaño máximo: 10MB
-- Formatos soportados: imágenes (jpg, png) y PDF
-- Verifica permisos de escritura en la carpeta `uploads/`
+**Fields:**
+- `message`: Query text
+- `threadId`: Thread identifier
+- `holdedKey`: Holded API key
+- `file`: Image or PDF file
 
-## 📝 Licencia
+## Troubleshooting
 
-MIT
+### Agent stuck in loop
+- Check LangSmith traces for errors
+- Verify Holded API key is valid
+- Recursion limit is set to 25 steps
 
-## 👥 Contribuir
+### Charts not rendering
+- Ensure recharts is installed: `npm install recharts`
+- Check browser console for errors
 
-1. Fork el proyecto
-2. Crea una rama para tu feature (`git checkout -b feature/AmazingFeature`)
-3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
-4. Push a la rama (`git push origin feature/AmazingFeature`)
-5. Abre un Pull Request
+### Voice input not working
+- Use Chrome/Edge (Web Speech API support)
+- Allow microphone permissions
+- Check HTTPS in production
 
-## 📧 Contacto
+### Docker issues
+```bash
+# Rebuild without cache
+docker-compose build --no-cache
 
-Para preguntas o soporte, abre un issue en el repositorio.
+# Check logs
+docker-compose logs -f
+
+# Reset volumes
+docker-compose down -v
+docker-compose up --build
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## License
+
+MIT License - see [LICENSE](LICENSE) for details.
+
+## Acknowledgments
+
+- [Holded](https://holded.com) for the API
+- [LangChain](https://langchain.com) / [LangGraph](https://langchain-ai.github.io/langgraphjs/) for agent framework
+- [assistant-ui](https://assistant-ui.com) for chat components
+- [Anthropic](https://anthropic.com) for Claude
