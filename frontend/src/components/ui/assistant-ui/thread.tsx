@@ -11,6 +11,7 @@ import { CheckIcon, CopyIcon, RefreshCwIcon, ArrowUpIcon, ArrowDownIcon, Square,
 import { type FC, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { Chart, parseChartBlocks } from "../Chart";
 
 export const Thread: FC = () => {
   return (
@@ -106,7 +107,7 @@ const QuickActions: FC = () => {
     {
       icon: BarChart3,
       label: "Resumen de ventas este mes",
-      action: () => sendMessage("Dame un resumen de las ventas de este mes"),
+      action: () => sendMessage("Dame un resumen de las ventas de este mes con gráfico"),
     },
     {
       icon: Search,
@@ -372,6 +373,26 @@ const AssistantMessage: FC = () => {
                       <Loader2 size={16} className="animate-spin" />
                       <span className="text-sm">{stepText}</span>
                     </div>
+                  );
+                }
+
+                // Detectar y renderizar gráficos
+                const parts = parseChartBlocks(text);
+                const hasCharts = parts.some(p => p.type === 'chart');
+
+                if (hasCharts) {
+                  return (
+                    <>
+                      {parts.map((part, index) => (
+                        part.type === 'chart' ? (
+                          <Chart key={index} {...(part.content as any)} />
+                        ) : (
+                          <ReactMarkdown key={index} remarkPlugins={[remarkGfm]}>
+                            {part.content as string}
+                          </ReactMarkdown>
+                        )
+                      ))}
+                    </>
                   );
                 }
 
