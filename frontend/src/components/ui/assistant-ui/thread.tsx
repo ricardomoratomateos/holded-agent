@@ -380,12 +380,17 @@ const AssistantMessage: FC = () => {
                 const parts = parseChartBlocks(text);
                 const hasCharts = parts.some(p => p.type === 'chart');
 
-                if (hasCharts) {
+                if (hasCharts || parts.some(p => p.type === 'loading')) {
                   return (
                     <>
                       {parts.map((part, index) => (
                         part.type === 'chart' ? (
                           <Chart key={index} {...(part.content as any)} />
+                        ) : part.type === 'loading' ? (
+                          <div key={index} className="flex items-center gap-2 text-[#b4b4b4] my-3 p-3 bg-white/5 rounded-lg">
+                            <Loader2 size={16} className="animate-spin" />
+                            <span className="text-sm">{part.content as string}</span>
+                          </div>
                         ) : (
                           <ReactMarkdown key={index} remarkPlugins={[remarkGfm]}>
                             {part.content as string}

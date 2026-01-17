@@ -65,17 +65,34 @@ export const Chart = ({ type, title, data }: ChartData) => {
 };
 
 // Parser para detectar bloques de chart en el texto
-export const parseChartBlocks = (text: string): Array<{ type: 'text' | 'chart'; content: string | ChartData }> => {
-  const parts: Array<{ type: 'text' | 'chart'; content: string | ChartData }> = [];
-  const chartRegex = /```chart\n([\s\S]*?)\n```/g;
+export const parseChartBlocks = (text: string): Array<{ type: 'text' | 'chart' | 'loading'; content: string | ChartData }> => {
+  const parts: Array<{ type: 'text' | 'chart' | 'loading'; content: string | ChartData }> = [];
 
+  // Primero: detectar si hay un chart incompleto (streaming)
+  const lastChartStart = text.lastIndexOf('```chart');
+  let hasIncompleteChart = false;
+  let cleanText = text;
+
+  if (lastChartStart !== -1) {
+    const afterChartStart = text.slice(lastChartStart);
+    // Buscar cierre después del inicio del chart
+    const closingMatch = afterChartStart.match(/\n```(?:\s|$)/);
+    if (!closingMatch) {
+      // Chart incompleto - cortar el texto ahí
+      hasIncompleteChart = true;
+      cleanText = text.slice(0, lastChartStart);
+    }
+  }
+
+  // Parsear charts completos
+  const chartRegex = /```chart\n([\s\S]*?)\n```/g;
   let lastIndex = 0;
   let match;
 
-  while ((match = chartRegex.exec(text)) !== null) {
+  while ((match = chartRegex.exec(cleanText)) !== null) {
     // Add text before the chart
     if (match.index > lastIndex) {
-      const textBefore = text.slice(lastIndex, match.index).trim();
+      const textBefore = cleanText.slice(lastIndex, match.index).trim();
       if (textBefore) {
         parts.push({ type: 'text', content: textBefore });
       }
@@ -86,23 +103,27 @@ export const parseChartBlocks = (text: string): Array<{ type: 'text' | 'chart'; 
       const chartData = JSON.parse(match[1]) as ChartData;
       parts.push({ type: 'chart', content: chartData });
     } catch (e) {
-      // If JSON parsing fails, treat as text
-      parts.push({ type: 'text', content: match[0] });
+      // If JSON parsing fails, skip it
     }
 
     lastIndex = match.index + match[0].length;
   }
 
   // Add remaining text
-  if (lastIndex < text.length) {
-    const remainingText = text.slice(lastIndex).trim();
+  if (lastIndex < cleanText.length) {
+    const remainingText = cleanText.slice(lastIndex).trim();
     if (remainingText) {
       parts.push({ type: 'text', content: remainingText });
     }
   }
 
-  // If no charts found, return original text
-  if (parts.length === 0) {
+  // Añadir loading si hay chart incompleto
+  if (hasIncompleteChart) {
+    parts.push({ type: 'loading', content: 'Generando gráfico...' });
+  }
+
+  // If no parts found, return original text
+  if (parts.length === 0 && text.trim() && !hasIncompleteChart) {
     parts.push({ type: 'text', content: text });
   }
 
