@@ -1,9 +1,5 @@
-import { HumanMessage } from "@langchain/core/messages";
 import { ChatStrategy, ChatStrategyContext } from "./chatStrategy.js";
 import { StreamProcessor } from "../services/streamProcessor.js";
-import { AgentStateDetector } from "../services/agentStateDetector.js";
-import fs from 'fs';
-import path from 'path';
 
 /**
  * MultipartStrategy - Maneja requests con archivos adjuntos (imágenes/PDFs)
