@@ -67,12 +67,18 @@ export async function createAgent(holdedApiKey: string) {
     ...commonTools
   ];
 
+  // Nodo para respuestas off-topic
+  const offTopicNode = async () => ({
+    messages: [new AIMessage("Soy un asistente especializado en Holded. Puedo ayudarte con facturas, contactos, productos, contabilidad y gestión empresarial. ¿En qué puedo ayudarte?")]
+  });
+
   // 2. Crear Grafo
   const workflow = new StateGraph(AgentState)
     .addNode("supervisor", supervisorNode)
     .addNode("holded_agent", createHoldedAgentNode(holdedAgentTools))
     .addNode("analytics_agent", createAnalyticsAgentNode(analyticsAgentTools))
-    
+    .addNode("off_topic", offTopicNode)
+
     // Nodos de herramientas
     .addNode("holded_tools", new ToolNode(holdedAgentTools))
     .addNode("analytics_tools", new ToolNode(analyticsAgentTools));
@@ -83,13 +89,13 @@ export async function createAgent(holdedApiKey: string) {
   // Supervisor decide a dónde ir
   workflow.addConditionalEdges("supervisor", (state) => {
     const next = state.next?.toLowerCase();
-    // Si el supervisor devuelve un agente válido, usarlo
-    if (next === "holded_agent" || next === "analytics_agent") {
-      return next;
-    }
-    // Por defecto, holded_agent (nunca dejar sin respuesta)
+    if (next === "off_topic") return "off_topic";
+    if (next === "holded_agent" || next === "analytics_agent") return next;
     return "holded_agent";
   });
+
+  // Off-topic va directo a END
+  workflow.addEdge("off_topic", END);
 
   // Lógica de salida de Holded Agent
   workflow.addConditionalEdges("holded_agent", (state) => {

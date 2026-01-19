@@ -8,7 +8,7 @@ const supervisorModel = new ChatAnthropic({
   temperature: 0,
 });
 
-const validAgents = ["holded_agent", "analytics_agent"];
+const validResponses = ["holded_agent", "analytics_agent", "off_topic"];
 
 export async function supervisorNode(state: typeof AgentState.State) {
   // Transformamos el historial para que sea legible y válido para Claude
@@ -35,8 +35,8 @@ export async function supervisorNode(state: typeof AgentState.State) {
     
     let next = response.content.toString().trim().toLowerCase();
 
-    // Si no es un agente válido, usar holded_agent por defecto
-    if (!validAgents.includes(next)) {
+    // Si no es una respuesta válida, usar holded_agent por defecto
+    if (!validResponses.includes(next)) {
       next = "holded_agent";
     }
 
