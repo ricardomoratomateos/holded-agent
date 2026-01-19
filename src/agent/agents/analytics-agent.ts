@@ -1,5 +1,5 @@
 import { ChatOpenAI } from "@langchain/openai";
-import { ANALYTICS_AGENT_PROMPT } from "../prompts/analytics.js";
+import { getAnalyticsAgentPrompt } from "../prompts/analytics.js";
 import { AgentState } from "../state.js";
 
 export function createAnalyticsAgentNode(tools: any[]) {
@@ -10,7 +10,7 @@ export function createAnalyticsAgentNode(tools: any[]) {
 
   return async (state: typeof AgentState.State) => {
     const response = await model.invoke([
-      ANALYTICS_AGENT_PROMPT,
+      getAnalyticsAgentPrompt(),
       ...state.messages
     ]);
 

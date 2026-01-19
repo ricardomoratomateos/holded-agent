@@ -1,6 +1,6 @@
 import { ChatAnthropic } from "@langchain/anthropic";
 import { AIMessage, HumanMessage } from "@langchain/core/messages";
-import { SUPERVISOR_PROMPT } from "../prompts/supervisor.js";
+import { getSupervisorPrompt } from "../prompts/supervisor.js";
 import { AgentState } from "../state.js";
 
 const supervisorModel = new ChatAnthropic({
@@ -8,7 +8,7 @@ const supervisorModel = new ChatAnthropic({
   temperature: 0,
 });
 
-const options = ["holded_agent", "analytics_agent", "FINISH"];
+const validAgents = ["holded_agent", "analytics_agent"];
 
 export async function supervisorNode(state: typeof AgentState.State) {
   // Transformamos el historial para que sea legible y válido para Claude
@@ -29,19 +29,20 @@ export async function supervisorNode(state: typeof AgentState.State) {
 
   try {
     const response = await supervisorModel.invoke([
-      SUPERVISOR_PROMPT,
+      getSupervisorPrompt(),
       ...simplifiedHistory,
     ]);
     
     let next = response.content.toString().trim().toLowerCase();
-    
-    // Validación de seguridad con la lista de opciones
-    const options = ["holded_agent", "analytics_agent", "finish"];
-    if (!options.includes(next)) next = "finish";
+
+    // Si no es un agente válido, usar holded_agent por defecto
+    if (!validAgents.includes(next)) {
+      next = "holded_agent";
+    }
 
     return { next };
   } catch (error) {
     console.error("Error crítico en Supervisor:", error);
-    return { next: "finish" }; // Si falla, termina para no buclear
+    return { next: "holded_agent" }; // Si falla, holded_agent responde
   }
 }

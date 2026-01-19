@@ -1,5 +1,5 @@
 import { ChatOpenAI } from "@langchain/openai";
-import { HOLDED_AGENT_PROMPT } from "../prompts/holded.js";
+import { getHoldedAgentPrompt } from "../prompts/holded.js";
 import { AgentState } from "../state.js";
 
 export function createHoldedAgentNode(tools: any[]) {
@@ -10,7 +10,7 @@ export function createHoldedAgentNode(tools: any[]) {
 
   return async (state: typeof AgentState.State) => {
     const response = await model.invoke([
-      HOLDED_AGENT_PROMPT,
+      getHoldedAgentPrompt(),
       ...state.messages
     ]);
 

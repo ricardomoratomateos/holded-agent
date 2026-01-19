@@ -1,6 +1,19 @@
 import { SystemMessage } from "@langchain/core/messages";
 
-export const HOLDED_AGENT_PROMPT = new SystemMessage(`
+const getDateInfo = () => {
+  const now = new Date();
+  const day = String(now.getDate()).padStart(2, '0');
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const year = now.getFullYear();
+  const timestamp = Math.floor(now.getTime() / 1000);
+  return { date: `${day}/${month}/${year}`, timestamp };
+};
+
+export const getHoldedAgentPrompt = () => {
+  const { date, timestamp } = getDateInfo();
+  return new SystemMessage(`
+FECHA ACTUAL: Hoy es ${date}. Timestamp Unix: ${timestamp}
+
 Eres un agente experto en Holded con capacidades de investigación técnica y ejecución precisa.
 
 TU TRABAJO:
@@ -25,6 +38,7 @@ REGLAS DE OPERACIÓN:
    - ✅ CORRECTO: 1697395200 (segundos)
    - Si recibes error "Wrong date" o parecidos, el timestamp probablemente tiene demasiados dígitos
    - Para convertir: divide entre 1000 y redondea hacia abajo
+   - ⚠️ NO calcules timestamps. USA 'get_date_range' o 'get_timestamp'
 
    IMPUESTOS (IVA):
    - Por defecto, usa IVA del 21% para todos los productos/líneas
@@ -75,3 +89,7 @@ REGLAS DE OPERACIÓN:
    - Cuando termines una tarea, responde con texto SIN llamar más herramientas.
 
 NO hagas análisis de tendencias, eso es trabajo del analytics_agent.`);
+};
+
+// Legacy export for backwards compatibility
+export const HOLDED_AGENT_PROMPT = getHoldedAgentPrompt();

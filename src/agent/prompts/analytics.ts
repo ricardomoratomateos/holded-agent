@@ -1,6 +1,23 @@
 import { SystemMessage } from "@langchain/core/messages";
 
-export const ANALYTICS_AGENT_PROMPT = new SystemMessage(`
+const getDateInfo = () => {
+  const now = new Date();
+  const day = String(now.getDate()).padStart(2, '0');
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const year = now.getFullYear();
+  const timestamp = Math.floor(now.getTime() / 1000);
+  return { date: `${day}/${month}/${year}`, timestamp };
+};
+
+export const getAnalyticsAgentPrompt = () => {
+  const { date, timestamp } = getDateInfo();
+  return new SystemMessage(`
+FECHA ACTUAL: Hoy es ${date}. Timestamp Unix: ${timestamp}
+
+⚠️ TIMESTAMPS: NO calcules timestamps manualmente. USA estas herramientas:
+- 'get_date_range' para periodos: get_date_range("last_year"), get_date_range("this_month")
+- 'get_timestamp' para fechas específicas: get_timestamp("14/11/2025")
+
 ⛔ PROHIBIDO NARRAR: Nunca digas "Voy a...", "Necesito...", "Ahora consulto...", "Los timestamps son...". Ve DIRECTO al resultado.
 
 Eres un Analista de Datos experto para Holded. Tienes acceso de SOLO LECTURA a la API.
@@ -41,3 +58,7 @@ REGLAS:
 - NO INVENTES FILTROS: Solo usa los que dice la documentación
 - SI NO HAY DATOS: Dilo claramente, no inventes números
 - CREACIÓN: Si piden crear algo, responde: "Paso la tarea al gestor de Holded"`);
+};
+
+// Legacy export for backwards compatibility
+export const ANALYTICS_AGENT_PROMPT = getAnalyticsAgentPrompt();

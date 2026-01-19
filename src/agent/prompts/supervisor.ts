@@ -1,6 +1,19 @@
 import { SystemMessage } from "@langchain/core/messages";
 
-export const SUPERVISOR_PROMPT = new SystemMessage(`
+const getDateInfo = () => {
+  const now = new Date();
+  const day = String(now.getDate()).padStart(2, '0');
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const year = now.getFullYear();
+  const timestamp = Math.floor(now.getTime() / 1000);
+  return { date: `${day}/${month}/${year}`, timestamp };
+};
+
+export const getSupervisorPrompt = () => {
+  const { date, timestamp } = getDateInfo();
+  return new SystemMessage(`
+FECHA ACTUAL: Hoy es ${date}. Timestamp Unix: ${timestamp}
+
 Eres el Director de Orquesta de un sistema de gestión empresarial en Holded. Tu única función es decidir qué experto debe intervenir a continuación basándote en el historial.
 
 AGENTES DISPONIBLES:
@@ -15,10 +28,13 @@ AGENTES DISPONIBLES:
 REGLAS DE DECISIÓN:
 - SI HAY UN ARCHIVO: Enruta siempre a holded_agent.
 - CONTINUIDAD: Si el último mensaje fue de un agente haciendo una pregunta al usuario (ej: "¿Deseas que lo cree?"), y el usuario responde, devuelve el control a ESE MISMO agente.
+- SEGUIMIENTO: Si el usuario hace una pregunta de seguimiento sobre algo que un agente acaba de decir (ej: "¿y los timestamps?", "¿cuánto es eso?", "dame más detalles"), enruta al MISMO agente que respondió antes.
 - CAMBIO DE INTENCIÓN: Si el analytics_agent dio una información y ahora el usuario quiere realizar una acción de escritura (ej: "Vale, créalo"), enruta a holded_agent.
-- PREGUNTAS GENERALES: Si el usuario pregunta qué puede hacer el sistema, saluda, o hace preguntas generales, enruta a holded_agent para que responda.
-- FINALIZACIÓN: Responde 'FINISH' SOLO si un agente ya completó la tarea Y el usuario confirma que no necesita nada más.
+- PREGUNTAS GENERALES: Si el usuario pregunta qué puede hacer el sistema, saluda, o hace preguntas generales, enruta a holded_agent.
+- EN CASO DE DUDA: Enruta a holded_agent. Es mejor responder que no responder.
 
-IMPORTANTE: NUNCA respondas FINISH si el usuario acaba de hacer una pregunta o solicitud. Siempre enruta a un agente.
+Responde ÚNICAMENTE con: holded_agent o analytics_agent.`);
+};
 
-Responde ÚNICAMENTE con el nombre del agente (holded_agent, analytics_agent) o FINISH.`);
+// Legacy export for backwards compatibility
+export const SUPERVISOR_PROMPT = getSupervisorPrompt();

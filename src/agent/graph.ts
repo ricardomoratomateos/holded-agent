@@ -8,6 +8,7 @@ import { analyzeDocumentTool } from "../tools/vision.js";
 import { getResearcherTools } from "../tools/mcp.js";
 import { getBrowserTools } from "../tools/playwright-mcp.js";
 import { createGetApiDocsTool } from "../tools/documentation.js";
+import { getTimestampTool, getDateRangeTool } from "../tools/dates.js";
 import { checkpointer } from "../database/persistence.js";
 
 import { AgentState } from "./state.js";
@@ -52,12 +53,16 @@ export async function createAgent(holdedApiKey: string) {
   const holdedAgentTools = [
     holdedTool,
     analyzeDocumentTool,
+    getTimestampTool,
+    getDateRangeTool,
     ...(apiDocsTool ? [apiDocsTool] : []),
     ...commonTools
   ];
 
   const analyticsAgentTools = [
     holdedToolReadOnly,
+    getTimestampTool,
+    getDateRangeTool,
     ...(apiDocsTool ? [apiDocsTool] : []),
     ...commonTools
   ];
@@ -78,11 +83,12 @@ export async function createAgent(holdedApiKey: string) {
   // Supervisor decide a dónde ir
   workflow.addConditionalEdges("supervisor", (state) => {
     const next = state.next?.toLowerCase();
-    // Si el supervisor alucina o devuelve algo raro, END.
-    if (!next || next.includes("finish") || !["holded_agent", "analytics_agent", "FINISH"].includes(next)) {
-        return END;
+    // Si el supervisor devuelve un agente válido, usarlo
+    if (next === "holded_agent" || next === "analytics_agent") {
+      return next;
     }
-    return next;
+    // Por defecto, holded_agent (nunca dejar sin respuesta)
+    return "holded_agent";
   });
 
   // Lógica de salida de Holded Agent
