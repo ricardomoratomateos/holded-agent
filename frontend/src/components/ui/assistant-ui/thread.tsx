@@ -11,6 +11,7 @@ import { CheckIcon, CopyIcon, RefreshCwIcon, ArrowUpIcon, ArrowDownIcon, Square,
 import { type FC, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import rehypeRaw from "rehype-raw";
 import { Chart, parseChartBlocks } from "../Chart";
 
 export const Thread: FC = () => {
@@ -158,8 +159,8 @@ const QuickActions: FC = () => {
     },
     {
       icon: Search,
-      label: "Buscar facturas pendientes",
-      action: () => sendMessage("Busca las facturas pendientes de cobro"),
+      label: "¿Cómo se crean facturas?",
+      action: () => sendMessage("¿Cómo se crean facturas en Holded?"),
     },
     {
       icon: Zap,
@@ -398,7 +399,7 @@ const AssistantMessage: FC = () => {
   return (
     <MessagePrimitive.Root className="flex justify-start mb-4">
       <div className="max-w-[85%] bg-white/5 rounded-3xl px-5 py-3">
-        <div className="prose prose-sm prose-invert max-w-none prose-p:my-2 prose-p:leading-relaxed prose-p:text-[#eee] prose-headings:text-[#eee] prose-strong:text-[#eee] prose-code:text-[#eee]">
+        <div className="prose prose-sm prose-invert max-w-none prose-p:my-2 prose-p:leading-relaxed prose-p:text-[#eee] prose-headings:text-[#eee] prose-strong:text-[#eee] prose-code:text-[#eee] prose-a:text-emerald-400 prose-a:underline hover:prose-a:text-emerald-300">
           <MessagePrimitive.Content
             components={{
               Text: ({ text }: { text: string }) => {
@@ -439,7 +440,23 @@ const AssistantMessage: FC = () => {
                             <span className="text-sm">{part.content as string}</span>
                           </div>
                         ) : (
-                          <ReactMarkdown key={index} remarkPlugins={[remarkGfm]}>
+                          <ReactMarkdown
+                            key={index}
+                            remarkPlugins={[remarkGfm]}
+                            rehypePlugins={[rehypeRaw]}
+                            components={{
+                              a: ({ href, children }) => (
+                                <a
+                                  href={href}
+                                  className="text-emerald-400 underline hover:text-emerald-300"
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                >
+                                  {children}
+                                </a>
+                              ),
+                            }}
+                          >
                             {part.content as string}
                           </ReactMarkdown>
                         )
@@ -449,7 +466,22 @@ const AssistantMessage: FC = () => {
                 }
 
                 return (
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
+                    rehypePlugins={[rehypeRaw]}
+                    components={{
+                      a: ({ href, children }) => (
+                        <a
+                          href={href}
+                          className="text-emerald-400 underline hover:text-emerald-300"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {children}
+                        </a>
+                      ),
+                    }}
+                  >
                     {text}
                   </ReactMarkdown>
                 );
