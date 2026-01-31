@@ -1,12 +1,14 @@
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";
 import { ChatOpenAI } from "@langchain/openai";
+import { SemanticDocumentationCache } from "../cache/semantic-documentation-cache.js";
 
 /**
- * Caché en memoria para documentación (TTL: 24 horas)
+ * Caché semántica para documentación usando embeddings de OpenAI
+ * Reemplaza la cache en memoria simple con una solución que entiende
+ * que "listado de contactos", "list contacts", "lista de contactos" son lo mismo
  */
-const docCache = new Map<string, { result: string; timestamp: number }>();
-const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 horas en ms
+const semanticCache = new SemanticDocumentationCache();
 
 /**
  * Tool multistep que busca documentación de la API de Holded y extrae el formato correcto
@@ -16,11 +18,10 @@ export function createGetApiDocsTool(braveSearchTool: any) {
   return tool(
     async ({ searchQuery, errorMessage }) => {
       try {
-        // PASO 0: Verificar caché
-        const cacheKey = searchQuery.toLowerCase().trim();
-        const cached = docCache.get(cacheKey);
-        if (cached && (Date.now() - cached.timestamp) < CACHE_TTL) {
-          return cached.result;
+        // PASO 0: Verificar caché semántica
+        const cached = await semanticCache.get(searchQuery);
+        if (cached) {
+          return cached; // Cache hit con similitud semántica
         }
 
         // PASO 1: Buscar en developers.holded.com
@@ -122,11 +123,24 @@ NO añadas explicaciones, SOLO la URL.`;
         const queryParams = endpointData.parameters?.filter((p: any) => p.in === 'query') || [];
         const pathParams = endpointData.parameters?.filter((p: any) => p.in === 'path') || [];
 
+        // Extraer prefijo de la API desde servers
+        let fullPath = path;
+        if (schema.servers && schema.servers.length > 0) {
+          const serverUrl = schema.servers[0].url;
+          // serverUrl es algo como "https://api.holded.com/api/invoicing/v1"
+          // Extraemos "invoicing/v1"
+          const match = serverUrl.match(/\/api\/(.+)$/);
+          if (match) {
+            const apiPrefix = match[1]; // "invoicing/v1"
+            fullPath = `${apiPrefix}${path}`; // "invoicing/v1/contacts"
+          }
+        }
+
         // PASO 6: Formatear respuesta para el agente
         const formattedResponse: any = {
           operation: searchQuery,
           method: method.toUpperCase(),
-          path: path,
+          path: fullPath,
           description: endpointData.description || endpointData.summary || "",
           notes: []
         };
@@ -173,10 +187,9 @@ NO añadas explicaciones, SOLO la URL.`;
 
         const cleanJson = JSON.stringify(formattedResponse, null, 2);
 
-        // PASO 7: Guardar en caché
-        docCache.set(cacheKey, {
-          result: cleanJson,
-          timestamp: Date.now()
+        // PASO 7: Guardar en caché semántica (async, no bloqueante)
+        semanticCache.set(searchQuery, cleanJson).catch(err => {
+          console.error('Error guardando en cache semántica:', err);
         });
 
         return cleanJson;

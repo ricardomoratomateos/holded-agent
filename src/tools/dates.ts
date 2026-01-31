@@ -113,6 +113,42 @@ Periodos:
 );
 
 /**
+ * Tool para calcular "últimos N días"
+ */
+export const getLastNDaysTool = tool(
+  async ({ days }) => {
+    const now = new Date();
+    const end = new Date(now);
+    end.setHours(23, 59, 59, 999);
+
+    const start = new Date(now);
+    start.setDate(now.getDate() - days);
+    start.setHours(0, 0, 0, 0);
+
+    return JSON.stringify({
+      days,
+      description: `Últimos ${days} días`,
+      start: { date: formatDate(start), timestamp: Math.floor(start.getTime() / 1000) },
+      end: { date: formatDate(end), timestamp: Math.floor(end.getTime() / 1000) }
+    });
+  },
+  {
+    name: "get_last_n_days",
+    description: `Calcula el rango de fechas para los "últimos N días" desde hoy.
+
+Ejemplos:
+- get_last_n_days({ days: 7 }) → últimos 7 días
+- get_last_n_days({ days: 15 }) → últimos 15 días
+- get_last_n_days({ days: 30 }) → últimos 30 días
+
+USA ESTA TOOL cuando el usuario pida "últimos X días", NO uses get_date_range("last_month").`,
+    schema: z.object({
+      days: z.number().describe("Número de días hacia atrás desde hoy")
+    })
+  }
+);
+
+/**
  * Tool simple para convertir fecha a timestamp
  */
 export const getTimestampTool = tool(
