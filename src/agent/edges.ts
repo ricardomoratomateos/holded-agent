@@ -2,9 +2,6 @@ import { AgentStateType } from "./state.js";
 import { AIMessage } from "@langchain/core/messages";
 import { END } from "@langchain/langgraph";
 
-// ===== CONSTANTES =====
-const MAX_CORRECTION_ATTEMPTS = 3;
-
 // ===== EDGE FUNCTIONS =====
 
 /**
@@ -12,7 +9,9 @@ const MAX_CORRECTION_ATTEMPTS = 3;
  * El Supervisor ya responde con "planning_agent" si detecta complejidad
  */
 export function afterSupervisor(state: AgentStateType): string {
-  const next = state.next?.toLowerCase();
+  // Extraer solo la primera palabra/línea (ignorar justificaciones extra)
+  const rawNext = state.next?.toLowerCase() || "";
+  const next = rawNext.split('\n')[0].trim(); // Primera línea solamente
 
   if (next === "off_topic") return "off_topic";
   if (next === "planning_agent") return "planning_agent";
@@ -23,17 +22,18 @@ export function afterSupervisor(state: AgentStateType): string {
 }
 
 /**
- * Después de Planning Agent, ir al agente correspondiente
+ * Después de Planning Agent, ir al agente apropiado
  */
 export function afterPlanning(state: AgentStateType): string {
   if (!state.plan || state.plan.length === 0) {
-    // No hay plan, ir directo a holded_agent
+    // No hay plan, ir directo a holded_agent (flujo normal)
     return "holded_agent";
   }
 
-  // Ir al primer step del plan
+  // Hay plan - ver qué agente debe ejecutarlo
+  // Usamos el primer step para decidir (normalmente todos los steps van al mismo agente)
   const firstStep = state.plan[0];
-  return firstStep.agent;
+  return firstStep.agent; // "holded_agent" o "analytics_agent"
 }
 
 // ELIMINADAS: shouldReflect y afterReflection
@@ -44,28 +44,22 @@ export function afterPlanning(state: AgentStateType): string {
  * Decide si necesita verificación después de ejecutar tools
  */
 export function shouldVerify(state: AgentStateType): string {
-  const lastToolResults = state.messages
-    .slice(-5)
-    .filter(m => m._getType() === "tool");
-
-  if (lastToolResults.length === 0) {
-    // No hay resultados de tools, volver al agente
-    return state.next === "analytics_agent" ? "analytics_agent" : "holded_agent";
-  }
-
   // Verificar si hubo una operación de escritura con resourceContext
-  if (state.verification.resourceContext?.id) {
+  // SOLO verificar si el status es "pending" (recién creado/actualizado)
+  if (state.verification.resourceContext?.id && state.verification.status === "pending") {
     // IMPORTANTE: Si attemptCount >= 1, significa que ya intentamos verificar/corregir
     // No volver a verification (evitar bucle infinito)
     if (state.verification.attemptCount >= 1) {
       // Ya se intentó corregir, no verificar de nuevo
+      // Volver al agente para que continúe o responda
       return state.next === "analytics_agent" ? "analytics_agent" : "holded_agent";
     }
 
     return "verification_agent"; // Primera vez, verificar recurso creado/modificado
   }
 
-  // No hay nada que verificar, volver al agente para responder
+  // No hay nada que verificar - volver al agente para que continúe trabajando
+  // El agente decidirá si hacer más tool_calls o responder (terminar)
   return state.next === "analytics_agent" ? "analytics_agent" : "holded_agent";
 }
 
@@ -76,7 +70,7 @@ export function afterVerification(state: AgentStateType): string {
   const { status, discrepancies, attemptCount } = state.verification;
 
   if (status === "verified") {
-    // ✅ Todo OK, responder al usuario
+    // ✅ Todo OK - volver al agente para que continúe
     return state.next === "analytics_agent" ? "analytics_agent" : "holded_agent";
   }
 
@@ -86,7 +80,7 @@ export function afterVerification(state: AgentStateType): string {
     // IMPORTANTE: Solo 1 intento de corrección permitido
     if (attemptCount >= 1) {
       // Ya intentamos corregir una vez, no seguir en bucle
-      // Volver al agente para informar al usuario
+      // Volver al agente para informar al usuario o continuar
       return state.next === "analytics_agent" ? "analytics_agent" : "holded_agent";
     }
 

@@ -48,3 +48,6 @@ data/
 uploads/*
 !uploads/.gitkeep
 tmp/
+
+# --- Documentación Técnica Interna ---
+.docs/

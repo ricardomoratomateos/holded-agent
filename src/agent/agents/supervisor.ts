@@ -52,8 +52,17 @@ export async function supervisorNode(state: typeof AgentState.State) {
       next = "holded_agent";
     }
 
+    // Si el supervisor decide NO usar planning_agent, limpiar cualquier plan residual
+    const clearPlan = next !== "planning_agent" ? {
+      plan: null,
+      currentStep: 0,
+      stepStatus: {},
+      planStepResults: {}
+    } : {};
+
     return {
       next,
+      ...clearPlan,
       executionTrace: {
         steps: steps
       }

@@ -123,7 +123,7 @@ export async function createAgent(holdedApiKey: string) {
   // Off-topic termina
   workflow.addEdge("off_topic", END);
 
-  // Planning Agent → agente ejecutor
+  // Planning Agent → holded_agent o analytics_agent (decide según el plan)
   workflow.addConditionalEdges("planning_agent", afterPlanning);
 
   // Agentes ejecutores → Tools directamente (validación ahora es una herramienta)
@@ -132,6 +132,8 @@ export async function createAgent(holdedApiKey: string) {
     if (lastMessage?.tool_calls && (lastMessage.tool_calls as any[]).length > 0) {
       return "holded_tools";
     }
+
+    // No hay más tool_calls - terminar
     return END;
   });
 
@@ -140,6 +142,8 @@ export async function createAgent(holdedApiKey: string) {
     if (lastMessage?.tool_calls && (lastMessage.tool_calls as any[]).length > 0) {
       return "analytics_tools";
     }
+
+    // No hay más tool_calls - terminar
     return END;
   });
 

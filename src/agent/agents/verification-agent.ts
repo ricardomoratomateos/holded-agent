@@ -1,7 +1,8 @@
-import { ChatOpenAI } from "@langchain/openai";
+import { ChatAnthropic } from "@langchain/anthropic";
 import { getVerificationPrompt } from "../prompts/verification.js";
 import { AgentState, Discrepancy, ExecutionStep } from "../state.js";
 import { withToolTracing, withLLMTracing } from "../tracing.js";
+import { constructPathWithLLM } from "../utils/path-constructor.js";
 
 /**
  * Crear Verification Agent Node con acceso a call_holded_api y documentation
@@ -16,12 +17,12 @@ export function createVerificationNode(holdedTool: any, apiDocsTool: any | null)
 
   // Wrapear LLM con tracing
   const verificationModel = withLLMTracing(
-    new ChatOpenAI({
-      modelName: "gpt-4o-mini",
+    new ChatAnthropic({
+      modelName: "claude-haiku-4-5",
       temperature: 0,
     }),
     "verification_agent",
-    "gpt-4o-mini",
+    "claude-haiku-4-5",
     steps
   );
 
@@ -89,8 +90,24 @@ export function createVerificationNode(holdedTool: any, apiDocsTool: any | null)
       };
     }
 
-    // Reemplazar cualquier parámetro {algo} o :algo con el ID real
-    fetchPath = docsJson.path.replace(/{[^}]+}/g, resourceContext.id).replace(/:(\w+)/g, resourceContext.id);
+    // Detectar cuántos placeholders hay en el path
+    const placeholders = docsJson.path.match(/{[^}]+}/g) || [];
+
+    if (placeholders.length === 0) {
+      // Sin placeholders → usar path directo
+      fetchPath = docsJson.path;
+    } else if (placeholders.length === 1) {
+      // Un solo placeholder → reemplazar directamente con el ID
+      fetchPath = docsJson.path.replace(/{[^}]+}/, resourceContext.id);
+    } else {
+      // Múltiples placeholders → usar LLM para merge inteligente
+      fetchPath = await constructPathWithLLM({
+        templatePath: docsJson.path,
+        creationPath: resourceContext.path,
+        resourceId: resourceContext.id,
+        steps: steps
+      });
+    }
   } catch (error: any) {
     return {
       verification: {

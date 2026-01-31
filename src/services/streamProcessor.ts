@@ -32,8 +32,15 @@ export class StreamProcessor {
 
       const textContent = this.extractTextContent(msg);
 
-      // Solo enviamos si hay texto
-      const isInternalNode = nodeName === "supervisor" || nodeName.includes("tools");
+      // Solo enviamos si hay texto y no es un nodo interno
+      const isInternalNode =
+        nodeName === "supervisor" ||
+        nodeName.includes("tools") ||
+        nodeName === "planning_agent" ||
+        nodeName === "reflection_agent" ||
+        nodeName === "verification_agent" ||
+        nodeName === "analyzer_agent" ||
+        nodeName === "corrector_agent";
 
       if (textContent && !isInternalNode) {
         writer.write({

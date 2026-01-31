@@ -70,6 +70,8 @@ Analiza si necesita planificación o es simple. Responde SOLO con JSON.
     return {
       plan: planData.plan,
       currentStep: 0,
+      stepStatus: {}, // Reset stepStatus cuando se genera un nuevo plan
+      planStepResults: {}, // Reset planStepResults cuando se genera un nuevo plan
       executionTrace: {
         steps: steps
       }

@@ -6,6 +6,7 @@ services:
     container_name: holded-agent-backend-dev
     ports:
       - "3300:3300"
+      - "9229:9229"  # Puerto de debug
     env_file:
       - .env
     volumes:
@@ -20,9 +21,12 @@ services:
       - /app/node_modules
     environment:
       - NODE_ENV=development
+      - REDIS_URL=redis://redis:6379
     command: npm run dev:docker
     networks:
       - holded-network
+    depends_on:
+      - redis
 
   frontend:
     build:
@@ -70,6 +74,28 @@ services:
       retries: 3
       start_period: 40s
 
+  # Redis para cache semántico de documentación
+  redis:
+    image: redis:7-alpine
+    container_name: holded-agent-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    restart: unless-stopped
+    networks:
+      - holded-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
 networks:
   holded-network:
     driver: bridge
+
+volumes:
+  redis-data:
+    driver: local

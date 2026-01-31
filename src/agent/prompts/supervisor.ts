@@ -32,23 +32,26 @@ AGENTES DISPONIBLES:
 4. off_topic: Rechaza preguntas no relacionadas con Holded.
 
 CRITERIOS DE PLANIFICACIÓN:
-USA planning_agent SI:
-- Query tiene 3+ acciones distintas (ej: "lista facturas, calcula total y envía informe")
-- Involucra múltiples recursos (ej: "contactos Y productos Y facturas")
-- Requiere pasos secuenciales (ej: "crea contacto, luego factura para ese contacto")
-- Palabras clave: "informe completo", "análisis detallado", "todos los", "comparar"
+USA planning_agent SI detectas CUALQUIERA de estos patrones:
+1. Palabras de secuencialidad: "luego", "después", "primero...luego", "y luego"
+   → Ejemplo: "crea contacto y LUEGO factura" = planning_agent
+2. Query con 3+ acciones distintas
+   → Ejemplo: "lista facturas, calcula total y envía informe" = planning_agent
+3. Involucra múltiples recursos diferentes
+   → Ejemplo: "crea 2 contactos Y 3 productos Y una factura" = planning_agent
+4. Palabras clave complejas: "informe completo", "análisis detallado", "todos los", "comparar"
 
 NO uses planning_agent SI:
-- CRUD simple (1-2 acciones)
-- Hay archivo adjunto (PDF/imagen)
+- CRUD de UN SOLO recurso (ej: "crea un contacto", "lista facturas")
+- Hay archivo adjunto (PDF/imagen) → siempre holded_agent
 - Consulta analítica simple (ej: "¿cuántas facturas?")
 - Seguimiento de conversación anterior
 
-REGLAS ADICIONALES:
-- ARCHIVOS: Siempre holded_agent (sin planning).
-- CONTINUIDAD: Si agente preguntó al usuario, devolver control al mismo agente.
-- SEGUIMIENTO: Preguntas de seguimiento al mismo agente anterior.
-- EN DUDA: holded_agent.
+IMPORTANTE - PRIORIDAD:
+- Si hay palabras "luego", "después", "primero...luego" → SIEMPRE planning_agent
+- Si hay archivo adjunto → SIEMPRE holded_agent (sin planning)
+- CONTINUIDAD: Si agente preguntó al usuario, devolver control al mismo agente
+- EN DUDA y NO hay secuencialidad → holded_agent
 
 QUÉ ES VÁLIDO (on-topic):
 ✅ Cualquier pregunta sobre funcionalidades de Holded
@@ -67,7 +70,14 @@ QUÉ ES OFF_TOPIC (rechazar):
 
 SI ALGUIEN PREGUNTA SOBRE INTEGRACIONES/FUNCIONALIDADES: Deriva a holded_agent para que busque info.
 
-Responde ÚNICAMENTE con: planning_agent, holded_agent, analytics_agent, o off_topic.`);
+FORMATO DE RESPUESTA:
+Responde SOLO con UNA palabra (sin explicaciones, sin justificaciones, sin texto adicional):
+- planning_agent
+- holded_agent
+- analytics_agent
+- off_topic
+
+NO añadas nada más. Solo el nombre del agente. Nada de "**Justificación:**" ni razonamientos.`);
 };
 
 // Legacy export for backwards compatibility

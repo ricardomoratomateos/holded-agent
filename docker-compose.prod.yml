@@ -8,9 +8,15 @@ services:
     ports:
       - "3300:3300"
     env_file: .env
+    environment:
+      - REDIS_URL=redis://redis:6379
+    networks:
+      - holded-network
+    depends_on:
+      - redis
 
   frontend:
-    build: 
+    build:
       context: ./frontend
       args:
         - VITE_API_URL=https://api-holded-agent.dewdewdewdewdew.com
@@ -20,3 +26,31 @@ services:
       - "8080:80"
     environment:
       - VITE_API_URL=https://api-holded-agent.dewdewdewdewdew.com
+    networks:
+      - holded-network
+
+  # Redis para cache semántico de documentación
+  redis:
+    image: redis:7-alpine
+    container_name: holded-agent-redis-prod
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    restart: always
+    networks:
+      - holded-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+networks:
+  holded-network:
+    driver: bridge
+
+volumes:
+  redis-data:
+    driver: local

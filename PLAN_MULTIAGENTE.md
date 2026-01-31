@@ -561,6 +561,336 @@ Executor:
 
 ---
 
+## Paralelización de Operaciones
+
+### Objetivo
+Permitir que el agente ejecute múltiples operaciones IGUALES en paralelo (ej: "crea 3 contactos")
+
+### Problema Actual
+Los LLMs tienden a hacer tool calls **secuenciales**:
+```
+POST contacto 1 → esperar → POST contacto 2 → esperar → POST contacto 3
+```
+
+### Solución: Múltiples Tool Calls Simultáneos
+
+El LLM debe hacer todos los tool calls en **una sola respuesta**:
+
+```typescript
+// Respuesta ideal del LLM:
+{
+  "tool_calls": [
+    {
+      "id": "call_1",
+      "name": "call_holded_api",
+      "arguments": {"method": "POST", "path": "contacts", "data": {"name": "Contact 1"}}
+    },
+    {
+      "id": "call_2",
+      "name": "call_holded_api",
+      "arguments": {"method": "POST", "path": "contacts", "data": {"name": "Contact 2"}}
+    },
+    {
+      "id": "call_3",
+      "name": "call_holded_api",
+      "arguments": {"method": "POST", "path": "contacts", "data": {"name": "Contact 3"}}
+    }
+  ]
+}
+```
+
+### Implementación
+
+**1. Añadir instrucción al prompt de holded_agent:**
+
+```typescript
+// src/agent/prompts/holded.ts
+PARALELIZACIÓN:
+- Si necesitas crear MÚLTIPLES recursos IGUALES (ej: 3 contactos, 5 productos), haz TODAS las llamadas en PARALELO en una sola respuesta
+- NO esperes el resultado de una antes de hacer la siguiente
+- Usa múltiples tool_calls simultáneos en lugar de uno a uno
+- Ejemplo: Para "crea 3 contactos A, B, C" → haz 3 tool_calls de call_holded_api en paralelo
+
+EXCEPCIONES (cuando NO paralelizar):
+- Si un recurso DEPENDE del ID de otro (ej: "crea contacto y luego factura para ese contacto")
+- En ese caso, ejecuta secuencialmente: contacto → esperar ID → factura con contactId
+```
+
+**2. Modificar ToolNode para ejecutar en paralelo:**
+
+```typescript
+// El ToolNode de LangGraph ya ejecuta múltiples tool_calls en paralelo por defecto
+// Solo necesitamos que el LLM los genere en una sola respuesta
+```
+
+**3. Ajustar verificación para batch:**
+
+Actualmente la verificación es 1 recurso a la vez. Para operaciones batch:
+
+```typescript
+// Opción A: Verificar 1 por 1 (actual - más lento pero más simple)
+POST contacto1 → verify → POST contacto2 → verify → POST contacto3 → verify
+
+// Opción B: Verificar en batch (futuro - más rápido pero complejo)
+POST contacto1, contacto2, contacto3 (paralelo)
+  ↓
+GET contacto1, contacto2, contacto3 (paralelo)
+  ↓
+verification_agent recibe array de recursos
+  ↓
+verifica todos en batch
+```
+
+### Casos de Uso
+
+**Paralelizable:**
+- "Crea 3 contactos: A, B, C"
+- "Crea 5 productos con precio 100€"
+- "Elimina los contactos con IDs X, Y, Z"
+
+**NO paralelizable (requiere secuencia):**
+- "Crea contacto y luego factura para ese contacto" (factura necesita contactId)
+- "Crea producto y añádelo a la factura" (necesita productId)
+- "Actualiza el contacto que acabas de crear" (necesita ID del paso anterior)
+
+### Ventajas
+
+- **Velocidad:** 3 contactos en ~1s en lugar de ~3s
+- **Eficiencia:** Menos roundtrips al LLM
+- **Mejor UX:** Usuario ve resultados más rápido
+
+### Limitaciones
+
+- **Verificación:** Sigue siendo 1 por 1 (por ahora)
+- **Dependencias:** El agente debe ser inteligente para detectar cuando NO paralelizar
+- **Rate limits:** Holded API podría tener límites de requests simultáneos
+
+### Testing
+
+```bash
+# Test 1: Paralelización básica
+Usuario: "Crea 3 contactos: Ana, Juan, Pedro"
+Esperado: 3 POST simultáneos → 3 verificaciones → respuesta
+
+# Test 2: Secuencial (dependencia)
+Usuario: "Crea contacto Luis y factura para él"
+Esperado: POST contacto → verificar → POST factura con contactId → verificar
+
+# Test 3: Mixto
+Usuario: "Crea 2 contactos A y B, luego una factura para cada uno"
+Esperado: 2 POST contactos (paralelo) → 2 POST facturas (paralelo)
+```
+
+---
+
+## Verificación y Análisis en Background
+
+### Problema Actual
+
+Cuando se crea un recurso, el flujo es **bloqueante**:
+
+```
+POST contacto → esperar respuesta API
+  ↓
+GET contacto (verificar que existe)
+  ↓
+verification_agent (analizar si se guardó correctamente)
+  ↓
+[Si falla] analyzer + corrector
+  ↓
+Responder al usuario
+```
+
+**Latencia total:** ~3-5 segundos para una creación simple.
+
+### Solución: Verificación Asíncrona
+
+**Flujo propuesto:**
+
+```
+POST contacto → esperar respuesta API (1s)
+  ↓
+Responder al usuario INMEDIATAMENTE ✅
+  ↓
+[BACKGROUND] GET + verification + correction (no bloqueante)
+  ↓
+[Si falla] Notificar al usuario en siguiente mensaje o log
+```
+
+### Implementación
+
+**1. Modificar shouldVerify para fork async:**
+
+```typescript
+// src/agent/edges.ts
+export function shouldVerify(state: AgentStateType): string {
+  if (state.verification.resourceContext?.id && state.verification.status === "pending") {
+
+    // OPCIÓN A: Verificación en background (no bloqueante)
+    if (state.asyncVerification === true) {
+      // Lanzar verificación en background
+      verifyInBackground(state);
+
+      // Volver al agente inmediatamente
+      return state.next === "analytics_agent" ? "analytics_agent" : "holded_agent";
+    }
+
+    // OPCIÓN B: Verificación síncrona (actual - bloqueante)
+    if (state.verification.attemptCount >= 1) {
+      return state.next === "analytics_agent" ? "analytics_agent" : "holded_agent";
+    }
+
+    return "verification_agent";
+  }
+
+  return state.next === "analytics_agent" ? "analytics_agent" : "holded_agent";
+}
+
+async function verifyInBackground(state: AgentStateType) {
+  // NO esperar la respuesta - fire and forget
+  setTimeout(async () => {
+    try {
+      const result = await verificationAgent(state);
+
+      if (result.status === "failed") {
+        // Logear o notificar
+        console.warn("Background verification failed:", result.discrepancies);
+
+        // Opcional: Intentar corrección automática
+        await analyzerAgent(state);
+        await correctorAgent(state);
+
+        // Re-verificar
+        const finalResult = await verificationAgent(state);
+        console.log("Background correction result:", finalResult.status);
+      }
+    } catch (error) {
+      console.error("Background verification error:", error);
+    }
+  }, 0);
+}
+```
+
+**2. Añadir campo asyncVerification al state:**
+
+```typescript
+// src/agent/state.ts
+export const AgentState = Annotation.Root({
+  // ... campos existentes
+
+  asyncVerification: Annotation<boolean>({
+    reducer: (x, y) => y ?? x,
+    default: () => false, // Por defecto síncrono (más seguro)
+  }),
+});
+```
+
+**3. Configurar desde el prompt/supervisor:**
+
+```typescript
+// Para operaciones CRUD simples → async true
+if (operation === "create" && !hasDependencies) {
+  return { asyncVerification: true };
+}
+
+// Para operaciones con plan → async false (necesitamos el resultado)
+if (state.plan) {
+  return { asyncVerification: false };
+}
+```
+
+### Ventajas
+
+- **Latencia percibida:** 3-5s → 1s (reducción 60-80%)
+- **UX:** Usuario ve respuesta inmediata
+- **Reliability:** Verificación sigue ocurriendo, solo que no bloquea
+
+### Desventajas
+
+- **Complejidad:** Manejo de errores async más difícil
+- **Notificación:** Si falla verificación, ¿cómo notificar al usuario?
+- **Debugging:** Más difícil rastrear problemas
+
+### Cuándo usar verificación async vs sync
+
+**Async (background) - Recomendado para:**
+- ✅ Creaciones simples sin dependencias ("crea un contacto")
+- ✅ Actualizaciones menores ("actualiza el email de Juan")
+- ✅ Operaciones batch independientes ("crea 10 productos")
+
+**Sync (bloqueante) - Recomendado para:**
+- ⚠️ Operaciones con plan multi-paso (necesitamos el ID para siguiente step)
+- ⚠️ Usuario específicamente pide confirmación ("¿se creó correctamente?")
+- ⚠️ Operaciones críticas donde error NO es aceptable (facturas legales)
+
+### Estrategia híbrida (Recomendada)
+
+```typescript
+// Por defecto: async para creaciones simples
+const shouldUseAsync = (
+  operation === "create" &&
+  !state.plan &&
+  !state.requiresStrictVerification
+);
+
+return {
+  asyncVerification: shouldUseAsync
+};
+```
+
+### Notificación de errores async
+
+**Opción 1: Log silencioso (simple)**
+```typescript
+// Solo logear en consola, no notificar al usuario
+console.warn("Resource verification failed but already responded to user");
+```
+
+**Opción 2: Notificación en próximo mensaje (mejor UX)**
+```typescript
+// Guardar en state
+state.pendingWarnings.push("El contacto se creó pero hubo un problema menor con el campo X");
+
+// En el siguiente mensaje del agente:
+if (state.pendingWarnings.length > 0) {
+  message += `\n\n⚠️ Nota: ${state.pendingWarnings.join(", ")}`;
+}
+```
+
+**Opción 3: Webhook/Event (avanzado)**
+```typescript
+// Emitir evento SSE al frontend
+emitSSE({
+  type: "verification_warning",
+  resourceId: "123",
+  message: "Verificación falló en background"
+});
+```
+
+### Implementación incremental
+
+**Fase 1 (actual):** Verificación 100% síncrona (bloqueante) ✅
+- Más seguro
+- Fácil de debugear
+- Garantiza que todo está correcto antes de responder
+
+**Fase 2 (futuro):** Verificación async con flag
+- Añadir `asyncVerification` flag
+- Solo activar para operaciones simples
+- Mantener sync para operaciones críticas
+
+**Fase 3 (avanzado):** Verificación batch en background
+- Múltiples creaciones → verificar todas en paralelo async
+- Sistema de notificaciones para errores
+
+### Métricas de éxito
+
+- **Latencia p95:** <1.5s (vs 5s actual)
+- **Tasa de verificación exitosa:** >99% (igual que sync)
+- **Tasa de notificación de errores:** <1% (errores reales que requieren atención)
+
+---
+
 ## Notas Técnicas
 
 ### Handling de Errores

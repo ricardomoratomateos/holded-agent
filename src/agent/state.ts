@@ -4,11 +4,9 @@ import { BaseMessage } from "@langchain/core/messages";
 // ===== TIPOS AUXILIARES =====
 
 export interface PlanStep {
-  stepNumber: number;
   description: string;
   agent: "holded_agent" | "analytics_agent";
   estimatedToolCalls: string[];
-  dependencies: number[]; // IDs de steps previos requeridos
 }
 
 export interface Issue {
@@ -55,15 +53,10 @@ export const AgentState = Annotation.Root({
     default: () => "supervisor",
   }),
 
-  // NUEVO: Plan generado por Planning Agent
+  // NUEVO: Plan generado por Planning Agent (solo como contexto)
   plan: Annotation<PlanStep[] | null>({
     reducer: (x, y) => y ?? x,
     default: () => null,
-  }),
-
-  currentStep: Annotation<number>({
-    reducer: (x, y) => y ?? x,
-    default: () => 0,
   }),
 
   // NUEVO: Reflexión pre-ejecución

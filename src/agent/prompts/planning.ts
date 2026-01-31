@@ -25,22 +25,21 @@ Si es compleja, responde con JSON:
 {
   "plan": [
     {
-      "stepNumber": 1,
-      "description": "Obtener facturas del último trimestre",
-      "agent": "analytics_agent",
-      "estimatedToolCalls": ["call_holded_api"],
-      "dependencies": []
+      "description": "Crear un contacto llamado 'Test Usuario' con email test@example.com",
+      "agent": "holded_agent",
+      "estimatedToolCalls": ["call_holded_api"]
     },
     {
-      "stepNumber": 2,
-      "description": "Crear informe con los datos obtenidos",
+      "description": "Crear una factura de 100€ para el contacto creado anteriormente",
       "agent": "holded_agent",
-      "estimatedToolCalls": ["call_holded_api"],
-      "dependencies": [1]
+      "estimatedToolCalls": ["call_holded_api"]
     }
   ]
 }
 
-IMPORTANTE: Describe cada step de forma clara y accionable.
+IMPORTANTE:
+- Describe cada step de forma clara y accionable.
+- El agente ejecutará TODOS los steps en una sola pasada.
+- Si un step depende de datos del anterior, el agente lo inferirá del contexto.
 `);
 };
