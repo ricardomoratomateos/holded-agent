@@ -5,10 +5,8 @@ import { AgentState, ExecutionStep } from "../state.js";
 import { withLLMTracing } from "../tracing.js";
 
 export function createHoldedAgentNode(tools: any[]) {
-  // Array para acumular steps de este agente
   const steps: ExecutionStep[] = [];
 
-  // Wrapear LLM con tracing
   const model = withLLMTracing(
     new ChatOpenAI({
       modelName: "gpt-4o-mini",

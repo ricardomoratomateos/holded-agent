@@ -8,7 +8,7 @@ import { StreamProcessor } from "../services/streamProcessor.js";
 export class NormalMessageStrategy implements ChatStrategy {
   private streamProcessor = new StreamProcessor();
 
-  async handle({ agent, config, writer, message }: ChatStrategyContext): Promise<void> {
+  async handle({ agent, config, writer, message, enableVerification }: ChatStrategyContext): Promise<void> {
     // Validar que hay mensaje
     if (!message) {
       writer.write({
@@ -23,7 +23,8 @@ export class NormalMessageStrategy implements ChatStrategy {
     try {
       // Crear stream con el mensaje del usuario
       const stream = await agent.stream({
-        messages: [new HumanMessage(message)]
+        messages: [new HumanMessage(message)],
+        enableVerification: enableVerification ?? false
       }, { ...config, streamMode: "messages" });
 
       // Procesar el stream

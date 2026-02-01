@@ -86,6 +86,12 @@ export const AgentState = Annotation.Root({
     }),
   }),
 
+  // Habilitar verificación (configurable por usuario)
+  enableVerification: Annotation<boolean>({
+    reducer: (x, y) => y ?? x,
+    default: () => false, // Por defecto desactivado para mayor velocidad
+  }),
+
   // NUEVO: Traza de ejecución para Judge
   executionTrace: Annotation<{
     steps: ExecutionStep[];

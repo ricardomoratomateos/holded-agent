@@ -6,7 +6,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Instalar dependencias
-RUN npm install
+RUN npm install --legacy-peer-deps
 
 # Crear directorio data con permisos
 RUN mkdir -p /app/data && chmod 777 /app/data

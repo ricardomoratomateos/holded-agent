@@ -1,4 +1,4 @@
-import { X } from 'lucide-react';
+import { X, Info } from 'lucide-react';
 import { ApiKeyInput } from './ApiKeyInput';
 
 interface SettingsModalProps {
@@ -7,6 +7,8 @@ interface SettingsModalProps {
   currentApiKey: string;
   onSaveApiKey: (key: string) => void;
   onClearApiKey: () => void;
+  enableVerification: boolean;
+  onToggleVerification: (enabled: boolean) => void;
 }
 
 export const SettingsModal = ({
@@ -14,7 +16,9 @@ export const SettingsModal = ({
   onClose,
   currentApiKey,
   onSaveApiKey,
-  onClearApiKey
+  onClearApiKey,
+  enableVerification,
+  onToggleVerification
 }: SettingsModalProps) => {
   if (!isOpen) return null;
 
@@ -37,6 +41,31 @@ export const SettingsModal = ({
             onSave={onSaveApiKey}
             onClear={onClearApiKey}
           />
+
+          {/* Verificación automática */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={enableVerification}
+                  onChange={(e) => onToggleVerification(e.target.checked)}
+                  className="w-4 h-4 rounded border-white/20 bg-[#1a1a1a] text-white focus:ring-2 focus:ring-white/20 cursor-pointer"
+                />
+                <span className="text-[#eee] text-sm">Verificar datos automáticamente</span>
+              </label>
+
+              {/* Tooltip */}
+              <div className="relative group">
+                <Info size={16} className="text-[#b4b4b4] cursor-help" />
+                <div className="absolute left-0 bottom-full mb-2 w-64 p-3 bg-[#1a1a1a] border border-white/10 rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10">
+                  <p className="text-xs text-[#b4b4b4] leading-relaxed">
+                    Cuando está activado, el agente verificará automáticamente que los datos creados o modificados en Holded coincidan con tu solicitud. Esto añade tiempo adicional, pero garantiza mayor precisión.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div className="p-6 border-t border-white/10 bg-[#212121] rounded-b-2xl">

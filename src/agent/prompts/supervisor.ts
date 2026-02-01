@@ -33,19 +33,21 @@ AGENTES DISPONIBLES:
 
 CRITERIOS DE PLANIFICACIÓN:
 USA planning_agent SI detectas CUALQUIERA de estos patrones:
-1. Palabras de secuencialidad: "luego", "después", "primero...luego", "y luego"
-   → Ejemplo: "crea contacto y LUEGO factura" = planning_agent
-2. Query con 3+ acciones distintas
-   → Ejemplo: "lista facturas, calcula total y envía informe" = planning_agent
-3. Involucra múltiples recursos diferentes
-   → Ejemplo: "crea 2 contactos Y 3 productos Y una factura" = planning_agent
-4. Palabras clave complejas: "informe completo", "análisis detallado", "todos los", "comparar"
+1. Palabras de secuencialidad COMPLEJA: "primero...luego...después", "paso 1, paso 2, paso 3"
+   → Ejemplo: "primero lista contactos, luego calcula total, después envía informe" = planning_agent
+2. Query con 4+ acciones distintas (NO 2-3)
+   → Ejemplo: "lista facturas, calcula total, genera PDF Y envía email" = planning_agent
+3. Involucra múltiples recursos diferentes Y complejos (5+ recursos)
+   → Ejemplo: "crea 5 contactos Y 10 productos Y 3 facturas con análisis" = planning_agent
+4. Palabras clave de análisis complejo: "informe completo", "análisis detallado comparativo", "reporte ejecutivo"
 
 NO uses planning_agent SI:
 - CRUD de UN SOLO recurso (ej: "crea un contacto", "lista facturas")
+- Operaciones simples de 2-3 acciones (ej: "crea contacto y factura", "actualiza email y teléfono") ← IMPORTANTE
 - Hay archivo adjunto (PDF/imagen) → siempre holded_agent
-- Consulta analítica simple (ej: "¿cuántas facturas?")
+- Consulta analítica simple (ej: "¿cuántas facturas?", "mejores clientes")
 - Seguimiento de conversación anterior
+- Palabra "luego" o "después" con solo 2 acciones simples (ej: "crea contacto y luego factura") → NO planning
 
 IMPORTANTE - PRIORIDAD:
 - Si hay palabras "luego", "después", "primero...luego" → SIEMPRE planning_agent

@@ -8,9 +8,10 @@ import { Thread } from "./ui/assistant-ui/thread";
 interface AssistantChatProps {
   apiKey: string;
   threadId: string;
+  enableVerification: boolean;
 }
 
-export function AssistantChat({ apiKey, threadId }: AssistantChatProps) {
+export function AssistantChat({ apiKey, threadId, enableVerification }: AssistantChatProps) {
   const [initialMessages, setInitialMessages] = useState<any[] | null>(null);
 
   // Cargar historial inicial antes de crear el runtime
@@ -33,14 +34,14 @@ export function AssistantChat({ apiKey, threadId }: AssistantChatProps) {
   }
 
   // Solo renderizar el chat cuando ya tenemos el historial
-  return <AssistantChatContent apiKey={apiKey} threadId={threadId} initialMessages={initialMessages} />;
+  return <AssistantChatContent apiKey={apiKey} threadId={threadId} enableVerification={enableVerification} initialMessages={initialMessages} />;
 }
 
-function AssistantChatContent({ apiKey, threadId, initialMessages }: AssistantChatProps & { initialMessages: any[] }) {
+function AssistantChatContent({ apiKey, threadId, enableVerification, initialMessages }: AssistantChatProps & { initialMessages: any[] }) {
   // Crear adapters memoizados
   const adapter = useMemo(
-    () => createHoldedAdapter({ apiKey, threadId }),
-    [apiKey, threadId]
+    () => createHoldedAdapter({ apiKey, threadId, enableVerification }),
+    [apiKey, threadId, enableVerification]
   );
 
   const attachmentAdapter = useMemo(

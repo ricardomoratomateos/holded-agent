@@ -44,6 +44,11 @@ export function afterPlanning(state: AgentStateType): string {
  * Decide si necesita verificación después de ejecutar tools
  */
 export function shouldVerify(state: AgentStateType): string {
+  // Si la verificación está deshabilitada por el usuario, skip directamente
+  if (!state.enableVerification) {
+    return state.next === "analytics_agent" ? "analytics_agent" : "holded_agent";
+  }
+
   // Verificar si hubo una operación de escritura con resourceContext
   // SOLO verificar si el status es "pending" (recién creado/actualizado)
   if (state.verification.resourceContext?.id && state.verification.status === "pending") {

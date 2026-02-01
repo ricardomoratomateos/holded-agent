@@ -18,6 +18,17 @@ function App() {
     return newId;
   });
 
+  // Verificación automática persistente (por defecto: false)
+  const [enableVerification, setEnableVerification] = useState(() => {
+    const saved = localStorage.getItem('holded_enable_verification');
+    return saved === 'true';
+  });
+
+  const handleToggleVerification = (enabled: boolean) => {
+    setEnableVerification(enabled);
+    localStorage.setItem('holded_enable_verification', String(enabled));
+  };
+
   // Mostrar settings solo la primera vez si no hay API key (después de cargar)
   useEffect(() => {
     if (!isLoading && !hasInitialized.current) {
@@ -45,7 +56,7 @@ function App() {
 
       {isConfigured ? (
         <div className="flex-1 overflow-hidden">
-          <AssistantChat apiKey={apiKey} threadId={threadId} />
+          <AssistantChat apiKey={apiKey} threadId={threadId} enableVerification={enableVerification} />
         </div>
       ) : (
         <div className="flex-1 flex items-center justify-center">
@@ -72,6 +83,8 @@ function App() {
           setSettingsOpen(false);
         }}
         onClearApiKey={clearApiKey}
+        enableVerification={enableVerification}
+        onToggleVerification={handleToggleVerification}
       />
 
       {!isConfigured && !settingsOpen && (

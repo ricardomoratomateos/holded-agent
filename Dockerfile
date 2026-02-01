@@ -1,7 +1,7 @@
 FROM node:20-slim
 WORKDIR /app
 COPY package*.json ./
-RUN npm install
+RUN npm install --legacy-peer-deps
 COPY . .
 RUN mkdir -p /app/data && chmod 777 /app/data
 RUN mkdir -p /app/uploads && chmod 777 /app/uploads

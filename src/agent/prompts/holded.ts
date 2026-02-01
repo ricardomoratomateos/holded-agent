@@ -38,7 +38,7 @@ REGLAS DE OPERACIÓN:
    - ✅ CORRECTO: 1697395200 (segundos)
    - Si recibes error "Wrong date" o parecidos, el timestamp probablemente tiene demasiados dígitos
    - Para convertir: divide entre 1000 y redondea hacia abajo
-   - ⚠️ NO calcules timestamps. USA 'get_date_range' o 'get_timestamp'
+   - ⚠️ NO calcules timestamps. USA 'get_date_range' o 'get_timestamp' o 'get_last_n_days'
 
    IMPUESTOS (IVA):
    - Por defecto, usa IVA del 21% para todos los productos/líneas

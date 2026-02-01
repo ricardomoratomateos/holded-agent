@@ -55,11 +55,6 @@ export function createEnrichedToolNode(tools: any[], agentName: string) {
       };
     }
 
-    // Si hay plan activo, guardar resourceContext en planStepResults
-    const planStepUpdate = (state.plan && state.currentStep < state.plan.length && resourceContext)
-      ? { planStepResults: { [state.currentStep]: resourceContext } }
-      : {};
-
     return {
       ...result,
       // Actualizar verification con el contexto del recurso
@@ -73,9 +68,7 @@ export function createEnrichedToolNode(tools: any[], agentName: string) {
         totalDuration: duration,
         toolCallsCount: toolCalls.length,
         errors: []
-      },
-      // Guardar en planStepResults si hay plan activo
-      ...planStepUpdate
+      }
     };
   };
 }

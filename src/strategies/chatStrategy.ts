@@ -8,6 +8,7 @@ export interface ChatStrategyContext {
   config: any;
   writer: SSEWriter;
   message?: string;
+  enableVerification?: boolean;
 }
 
 /**

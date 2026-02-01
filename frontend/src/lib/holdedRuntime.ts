@@ -6,12 +6,13 @@ const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3300";
 interface HoldedRuntimeOptions {
   apiKey: string;
   threadId: string;
+  enableVerification: boolean;
 }
 
 /**
  * Custom runtime adapter para nuestro backend SSE de Holded
  */
-export function createHoldedAdapter({ apiKey, threadId }: HoldedRuntimeOptions): ChatModelAdapter {
+export function createHoldedAdapter({ apiKey, threadId, enableVerification }: HoldedRuntimeOptions): ChatModelAdapter {
   return {
     async *run({ messages, abortSignal }) {
       // Obtener el último mensaje del usuario
@@ -34,6 +35,7 @@ export function createHoldedAdapter({ apiKey, threadId }: HoldedRuntimeOptions):
         formData.append("message", messageText || "Analiza el documento adjunto");
         formData.append("threadId", threadId);
         formData.append("holdedKey", apiKey);
+        formData.append("enableVerification", String(enableVerification));
         formData.append("file", firstAttachment.file);
 
         response = await fetch(`${API_URL}/chat`, {
@@ -56,6 +58,7 @@ export function createHoldedAdapter({ apiKey, threadId }: HoldedRuntimeOptions):
             message: messageText,
             threadId,
             holdedKey: apiKey,
+            enableVerification,
           }),
           signal: abortSignal,
         });

@@ -134,7 +134,8 @@ server.post("/chat", async (request, reply) => {
       agent,
       config,
       writer,
-      message: finalMessage
+      message: finalMessage,
+      enableVerification: body.enableVerification ?? false
     });
 
   } catch (error) {

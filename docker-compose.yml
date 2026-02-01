@@ -22,7 +22,7 @@ services:
     environment:
       - NODE_ENV=development
       - REDIS_URL=redis://redis:6379
-    command: npm run dev:docker
+    command: npm run dev:docker:debug
     networks:
       - holded-network
     depends_on:
