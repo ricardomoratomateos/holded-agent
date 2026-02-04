@@ -21,12 +21,14 @@ services:
       - /app/node_modules
     environment:
       - NODE_ENV=development
-      - REDIS_URL=redis://redis:6379
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379
+      - QDRANT_URL=http://qdrant:6333
     command: npm run dev:docker:debug
     networks:
       - holded-network
     depends_on:
       - redis
+      - qdrant
 
   frontend:
     build:
@@ -79,15 +81,33 @@ services:
     image: redis:7-alpine
     container_name: holded-agent-redis
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"  # Solo accesible desde localhost
     volumes:
       - redis-data:/data
-    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru --requirepass ${REDIS_PASSWORD}
     restart: unless-stopped
     networks:
       - holded-network
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  # Qdrant para memoria vectorial
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: holded-agent-qdrant
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant-data:/qdrant/storage
+    restart: unless-stopped
+    networks:
+      - holded-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6333/healthz"]
       interval: 10s
       timeout: 3s
       retries: 3
@@ -98,4 +118,6 @@ networks:
 
 volumes:
   redis-data:
+    driver: local
+  qdrant-data:
     driver: local
