@@ -92,7 +92,7 @@ function App() {
           <div className="bg-[#2a2a2a] rounded-2xl p-6 shadow-2xl max-w-md mx-4 border border-white/10">
             <h2 className="text-xl font-semibold mb-3 text-[#eee]">API Key Requerida</h2>
             <p className="text-[#cdcdcd] mb-4">
-              Por favor configura tu API key de Holded para usar el chat.
+              Por favor configura tu API key de ERP para usar el chat.
             </p>
             <button
               onClick={() => setSettingsOpen(true)}

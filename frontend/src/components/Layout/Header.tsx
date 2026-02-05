@@ -31,7 +31,7 @@ export const Header = ({ onOpenSettings, onClearChat, hasApiKey }: HeaderProps) 
           <div className="flex items-center gap-2.5">
             <Logo size={36} />
             <div>
-              <h1 className="text-base font-semibold text-[#eee]">Holded AI Agent</h1>
+              <h1 className="text-base font-semibold text-[#eee]">ERP AI Agent</h1>
             </div>
           </div>
 

@@ -79,10 +79,10 @@ const ThreadWelcome: FC = () => {
   return (
     <div className="flex flex-col items-center justify-center py-12 text-center px-4">
       <h2 className="text-2xl font-semibold text-[#eee] mb-2">
-        Asistente de Holded
+        Asistente de ERP
       </h2>
       <p className="text-[#b4b4b4] mb-8">
-        Tu agente investigador y gestor de Holded
+        Tu agente investigador y gestor de ERP
       </p>
 
       {/* Dashboard Cards */}
@@ -105,7 +105,7 @@ const ThreadWelcome: FC = () => {
         <p className="text-xs text-[#888] uppercase tracking-wide mb-2">También puedes:</p>
         <p>📄 Crear facturas, presupuestos y pedidos</p>
         <p>🔍 Analizar imágenes y PDFs de facturas</p>
-        <p>❓ Preguntar sobre la documentación de Holded</p>
+        <p>❓ Preguntar sobre la documentación de ERP</p>
       </div>
     </div>
   );
@@ -140,7 +140,7 @@ const QuickActions: FC = () => {
         await composer.addAttachment(file);
         // Enviar mensaje automáticamente después de adjuntar
         setTimeout(() => {
-          composer.setText("Analiza esta compra y créala en Holded");
+          composer.setText("Analiza esta compra y créala en ERP");
           composer.send();
         }, 100);
       }
@@ -160,7 +160,7 @@ const QuickActions: FC = () => {
     {
       icon: Search,
       label: "¿Cómo se crean facturas?",
-      action: () => sendMessage("¿Cómo se crean facturas en Holded?"),
+      action: () => sendMessage("¿Cómo se crean facturas en ERP?"),
     },
     {
       icon: Zap,

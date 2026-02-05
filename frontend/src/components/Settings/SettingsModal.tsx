@@ -60,7 +60,7 @@ export const SettingsModal = ({
                 <Info size={16} className="text-[#b4b4b4] cursor-help" />
                 <div className="absolute left-0 bottom-full mb-2 w-64 p-3 bg-[#1a1a1a] border border-white/10 rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10">
                   <p className="text-xs text-[#b4b4b4] leading-relaxed">
-                    Cuando está activado, el agente verificará automáticamente que los datos creados o modificados en Holded coincidan con tu solicitud. Esto añade tiempo adicional, pero garantiza mayor precisión.
+                    Cuando está activado, el agente verificará automáticamente que los datos creados o modificados en ERP coincidan con tu solicitud. Esto añade tiempo adicional, pero garantiza mayor precisión.
                   </p>
                 </div>
               </div>
